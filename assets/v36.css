@@ -42,3 +42,43 @@
 @media(max-width:720px){.v36-start{padding-bottom:30px}.v36-header{padding-top:8px;align-items:stretch}.v36-school-brand{padding:8px 11px}.v36-school-brand img{width:50px;height:50px}.v36-school-copy b{font-size:17px}.v36-school-copy span{font-size:10px}.v36-icon-btn{width:50px;height:50px}.v36-home{width:94vw;gap:12px}.v36-intro-card{padding:16px;border-radius:26px}.v36-intro-top{grid-template-columns:1fr;min-height:auto;text-align:center}.v36-copy{text-align:center}.v36-mascot-box{height:220px;order:2}.v36-mascot-box img{max-height:225px}.v36-copy h1{font-size:46px}.v36-copy p{font-size:15px}.v36-ribbon{font-size:20px}.v36-steps{grid-template-columns:repeat(4,1fr);gap:6px}.v36-arrow{display:none}.v36-step{min-height:104px}.v36-step b{font-size:12px}.v36-step small{font-size:10px}.v36-evidence{grid-template-columns:1fr 1fr}.v36-secondary-actions{grid-template-columns:1fr}.v36-map-card{min-height:390px;border-radius:26px}.v36-map-card img{min-height:390px}.v36-map-label{top:12px;right:12px;font-size:13px}.v36-map-caption{left:10px;right:10px;bottom:10px;max-width:none}.v36-credit{flex-wrap:wrap;gap:6px;font-size:11px}.v36-credit i{display:none}}
 /* المدود في مختبر الحروف */
 .lc-row.long-vowels{padding:8px;border-radius:18px;background:#fff9df;border:1px dashed #e7c359}.lc-chip.long{border-color:#e6c660;background:#fffdf2}.long-note b{font-family:var(--learn);font-size:22px;color:var(--v36-navy)}
+\n\n/* V36.1 — خريطة البداية أوضح وأصغر */
+@media(min-width:1181px){
+  .v36-home{
+    width:min(1320px,94vw);
+    grid-template-columns:minmax(420px,520px) minmax(0,760px);
+    justify-content:center;
+    align-items:start;
+    gap:18px;
+  }
+  .v36-intro-card{min-height:650px}
+  .v36-map-card{
+    min-height:0;
+    max-width:760px;
+    width:100%;
+    align-self:start;
+    justify-self:center;
+    padding:8px;
+    background:linear-gradient(180deg,#dff8ff,#bdeef7);
+  }
+  .v36-map-card img{
+    width:100%;
+    height:auto;
+    min-height:0;
+    object-fit:contain;
+    object-position:center;
+    filter:none;
+    border-radius:28px;
+    display:block;
+  }
+  .v36-map-card .v36-map-label,
+  .v36-map-card .v36-map-caption{display:none}
+}
+@media(max-width:1180px){
+  .v36-map-card{min-height:0;padding:8px}
+  .v36-map-card img{width:100%;height:auto;min-height:0;object-fit:contain;filter:none;border-radius:22px}
+  .v36-map-card .v36-map-label,
+  .v36-map-card .v36-map-caption{display:none}
+}
+/* شعار مختبر الحروف */
+.ab-icon{white-space:nowrap}
