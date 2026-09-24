@@ -6,7 +6,7 @@
 <title>مغامرة المأمون — العربية لغير الناطقين بها</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="theme-color" content="#123d67">
-<link rel="stylesheet" href="assets/game.css?v=34">
+<link rel="stylesheet" href="assets/game.css?v=36">
 
 <style>
 :root{--ui-navy:#123d67;--ui-blue:#19a7d8;--ui-gold:#d9a11d;--ui-bg:#f5fbff;--ui-card:#ffffff;--ui-shadow:0 20px 50px rgba(18,61,103,.12)}
@@ -45,62 +45,77 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
 .evidence-strip{display:flex;flex-wrap:wrap;gap:8px;margin:-10px 0 20px}.evidence-strip span{font-size:14px;font-weight:900;color:#47637b;background:rgba(255,255,255,.86);border:1px solid rgba(18,61,103,.08);padding:8px 11px;border-radius:999px}
 @media(max-width:700px){.evidence-strip{justify-content:center}.evidence-strip span{font-size:12px}}
 </style>
-<link rel="stylesheet" href="assets/v30.css?v=34">
-<link rel="stylesheet" href="assets/v34.css?v=34">
+<link rel="stylesheet" href="assets/v30.css?v=36">
+<link rel="stylesheet" href="assets/v36.css?v=36">
 
 </head>
 <body>
 <div id="app" class="app">
-  <section id="startScreen" class="screen active start-screen adventure-start">
-    <div class="adventure-sea" aria-hidden="true"><span class="sea-spark s1">✦</span><span class="sea-spark s2">✦</span><span class="sea-spark s3">✦</span></div>
-    <header class="school-strip adventure-header">
-      <div class="school-brand"><img src="assets/logo.webp?v=34" alt="شعار مدرسة المأمون"><div><b>مدرسة المأمون الابتدائية للبنين</b><span>مغامرة المأمون — من الحرف إلى الطلاقة</span></div></div>
-      <button id="adminOpenBtn" class="icon-btn" aria-label="لوحة الإدارة" title="لوحة الإدارة">📊</button>
+  <section id="startScreen" class="screen active start-screen v36-start">
+    <div class="v36-sky" aria-hidden="true"><span class="v36-star s1">✦</span><span class="v36-star s2">✦</span><span class="v36-cloud c1">☁</span><span class="v36-cloud c2">☁</span></div>
+
+    <header class="v36-header">
+      <div class="v36-header-tools">
+        <button id="adminOpenBtn" class="v36-icon-btn" aria-label="لوحة الإدارة">📊</button>
+        <span class="v36-mini-pill">🇧🇭 مغامرة لغوية عبر البحرين</span>
+      </div>
+      <div class="v36-school-brand">
+        <div class="v36-school-copy"><b>مدرسة المأمون الابتدائية للبنين</b><span>مغامرة المأمون — من الحرف إلى الطلاقة</span></div>
+        <img src="assets/logo.webp?v=36" alt="شعار مدرسة المأمون">
+      </div>
     </header>
 
-    <div class="adventure-shell">
-      <div class="adventure-map-card" aria-label="خريطة مغامرة المأمون في البحرين">
-        <img src="assets/bahrain-world.webp?v=34" alt="خريطة مغامرة المأمون في البحرين ومعالمها">
-        <div class="map-shine" aria-hidden="true"></div>
-        <div class="map-badge">🗺️ خريطة المغامرة</div>
-        <div class="map-compass" aria-hidden="true"><span>ن</span><b>✦</b></div>
-      </div>
-
-      <main class="start-copy adventure-panel">
-        <div class="game-label">🇧🇭 مغامرة لغوية عبر البحرين</div>
-        <div class="quest-kicker">اكتشف • تعلّم • اجمع المفاتيح</div>
-        <h1>جاهز لرحلة<br>كنز اللغة؟</h1>
-        <h2>من الحرف إلى كنز الطلاقة</h2>
-        <p>انطلق مع شخصية المأمون بين معالم البحرين، وأنجز تحديات <b>النطق والقراءة والمفردات والجمل</b> حتى تجمع مفاتيح اللغة وتصل إلى الكنز.</p>
-        <p class="start-en" dir="ltr">Explore Bahrain, master Arabic, and unlock the treasure — one mission at a time.</p>
-
-        <div class="quest-route" aria-label="مسار التعلم">
-          <div class="quest-stop"><span>🏰</span><b>قلعة البحرين</b><small>الحروف</small></div>
-          <i>←</i>
-          <div class="quest-stop"><span>🏛️</span><b>المتحف</b><small>الكلمات</small></div>
-          <i>←</i>
-          <div class="quest-stop"><span>🏎️</span><b>الحلبة</b><small>الجمل</small></div>
-          <i>←</i>
-          <div class="quest-stop treasure-stop"><span>🏆</span><b>الكنز</b><small>الطلاقة</small></div>
+    <main class="v36-home">
+      <article class="v36-intro-card">
+        <div class="v36-intro-top">
+          <div class="v36-mascot-box" aria-hidden="true">
+            <span class="v36-compass">✦</span>
+            <img src="assets/mascot.webp?v=36" alt="">
+          </div>
+          <div class="v36-copy">
+            <div class="v36-eyebrow">اكتشف • تعلّم • اجمع المفاتيح</div>
+            <h1>جاهز لرحلة<br><span>كنز اللغة؟</span></h1>
+            <div class="v36-ribbon">من الحرف إلى كنز الطلاقة</div>
+            <p>انطلق مع شخصية المأمون في رحلة بين معالم البحرين. تعلّم الحروف والأصوات، اقرأ الكلمات، ابنِ الجمل، واجمع مفاتيح اللغة حتى تصل إلى الكنز.</p>
+            <p class="v36-english" dir="ltr">Explore Bahrain, master Arabic, and unlock the treasure — one mission at a time.</p>
+          </div>
         </div>
 
-        <div class="adventure-proof">
+        <div class="v36-section-title"><span></span><b>مراحل رحلتك في البحرين</b><span></span></div>
+        <div class="v36-steps">
+          <div class="v36-step"><i>1</i><div class="v36-step-icon">🏰</div><b>قلعة البحرين</b><small>الحروف والمدود</small></div>
+          <span class="v36-arrow">←</span>
+          <div class="v36-step"><i>2</i><div class="v36-step-icon">🏛️</div><b>المتحف</b><small>الكلمات</small></div>
+          <span class="v36-arrow">←</span>
+          <div class="v36-step"><i>3</i><div class="v36-step-icon">🏎️</div><b>الحلبة</b><small>الجمل</small></div>
+          <span class="v36-arrow">←</span>
+          <div class="v36-step treasure"><i>4</i><div class="v36-step-icon">🏆</div><b>الكنز</b><small>الطلاقة</small></div>
+        </div>
+
+        <div class="v36-evidence">
           <span>🎯 يبدأ بتشخيص</span><span>🛟 دعم عند الحاجة</span><span>✅ 80% للإتقان</span><span>📈 قياس التقدم</span>
         </div>
 
-        <div class="start-buttons adventure-buttons">
-          <button id="loginBtn" class="big-btn primary quest-main">▶ ابدأ المغامرة</button>
-          <button id="createBtn" class="big-btn gold">🎫 حساب جديد</button>
-          <button id="labStartBtn" class="big-btn ghost"><span class="ab-icon" aria-hidden="true">أب</span> مختبر الحروف</button>
+        <div class="v36-actions">
+          <button id="loginBtn" class="big-btn primary v36-start-btn">ابدأ المغامرة ▶</button>
+          <div class="v36-secondary-actions">
+            <button id="createBtn" class="big-btn gold">＋ حساب جديد</button>
+            <button id="labStartBtn" class="big-btn ghost"><span class="ab-icon" aria-hidden="true">أب</span> مختبر الحروف</button>
+          </div>
         </div>
         <div id="resumeBox" class="resume-box hidden"></div>
         <div id="voiceBanner" class="voice-banner hidden">🔈 لا يوجد صوت عربي في هذا المتصفح. للحصول على أفضل نطق استخدم <b>Google Chrome</b> أو <b>Microsoft Edge</b>، أو سجّل صوت المعلمة من استوديو الصوت.</div>
-      </main>
-    </div>
+      </article>
 
-    <footer class="credit adventure-credit"><div class="credit-line">إعداد القائم بأعمال مدير مساعد: <b>أ. نافجة الحامد</b></div><div class="credit-line">مديرة المدرسة: <b>أ. عايدة الدوسري</b></div><span class="version-tag" dir="ltr">V34</span></footer>
+      <article class="v36-map-card">
+        <div class="v36-map-label">🗺️ خريطة المغامرة</div>
+        <img src="assets/bahrain-world.webp?v=36" alt="خريطة مغامرة المأمون في البحرين">
+        <div class="v36-map-caption"><b>كل محطة تقرّبك من كنز الطلاقة</b><span>اجمع النجوم والمفاتيح وأكمل رحلتك</span></div>
+      </article>
+    </main>
+
+    <footer class="v36-credit"><span>إعداد القائم بأعمال مدير مساعد: <b>أ. نافجة الحامد</b></span><i>✦</i><span>مديرة المدرسة: <b>أ. عايدة الدوسري</b></span><em dir="ltr">V36</em></footer>
   </section>
-
   <section id="diagnosticScreen" class="screen diagnostic-screen">
     <div class="top-hud simple">
       <button class="round-btn" data-nav="start">⌂</button>
@@ -109,7 +124,7 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
     </div>
     <div class="diagnostic-stage">
       <aside class="diag-guide">
-        <img src="assets/mascot.webp?v=34" alt="المأمون">
+        <img src="assets/mascot.webp?v=36" alt="المأمون">
         <div class="guide-talk" id="diagGuideText">استمع جيدًا. لا بأس إن لم تعرف الإجابة، فالاختبار يحدد نقطة التدريب المناسبة.</div>
         <div class="domain-meter">
           <div><span>الحروف والأصوات</span><i><b id="meterLetters"></b></i></div>
@@ -127,15 +142,15 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
 
   <section id="worldScreen" class="screen world-screen">
     <div class="top-hud">
-      <button id="profileChip" class="profile-chip"><img src="assets/mascot.webp?v=34" alt=""><span><b id="hudName">الطالب</b><small>الصف <span id="hudGrade">1</span></small></span></button>
+      <button id="profileChip" class="profile-chip"><img src="assets/mascot.webp?v=36" alt=""><span><b id="hudName">الطالب</b><small>الصف <span id="hudGrade">1</span></small></span></button>
       <div class="hud-stats"><span class="hud-pill">⭐ <b id="hudPoints">0</b></span><span class="hud-pill">🔑 <b id="hudKeys">0</b>/8</span><span class="hud-pill">🎯 <b id="hudLevel">Pre-A1</b></span></div>
       <div class="hud-actions"><button class="toggle-btn" data-toggle="help" aria-label="English help">EN</button><button class="toggle-btn" data-toggle="tl" aria-label="Sound spelling">Aa</button><button id="worldSoundBtn" class="round-btn" aria-label="الصوت">🔊</button><button class="round-btn" data-nav="start">⌂</button></div>
     </div>
     <div class="world">
       <div class="map-box" id="mapBox">
-      <img class="world-art" src="assets/bahrain-world.webp?v=34" alt="خريطة مغامرة البحرين">
+      <img class="world-art" src="assets/bahrain-world.webp?v=36" alt="خريطة مغامرة البحرين">
       <svg class="learning-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline id="learningRouteLine" points=""></polyline></svg>
-      <img id="explorer" class="explorer" src="assets/mascot.webp?v=34" alt="المأمون يتحرك بين المحطات">
+      <img id="explorer" class="explorer" src="assets/mascot.webp?v=36" alt="المأمون يتحرك بين المحطات">
       <div id="sparkles" class="sparkles"></div>
       <!-- مواقع المحطات مطابقة للمعالم المرسومة في الخريطة (نسبة مئوية من الصورة) -->
       <button class="station-node" data-stage="0" style="--x:48.05%;--y:33.73%"><span>1</span><b>قلعة البحرين</b><small>الحروف والحركات</small></button>
@@ -160,7 +175,7 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
     <div class="stage-particles" id="stageParticles"></div>
     <div class="top-hud stage-hud"><button id="backWorldBtn" class="round-btn" aria-label="العودة للخريطة">→</button><div class="hud-title"><span id="stageIcon"><span class="ab-icon" aria-hidden="true">أب</span></span> <span id="stageTitle">الحروف والحركات</span></div><div class="hud-stats"><span class="hud-pill combo" id="comboPill" hidden>🔥 <b>0</b></span><span class="hud-pill">إتقان <b id="stageMastery">0%</b></span><span class="hud-pill">⭐ <b id="stagePoints">0</b></span><button class="toggle-btn" data-toggle="help" aria-label="English help">EN</button><button class="toggle-btn" data-toggle="tl" aria-label="Sound spelling">Aa</button><button id="stageSoundBtn" class="round-btn" aria-label="الصوت">🔊</button></div></div>
     <div class="stage-layout">
-      <aside class="coach"><img src="assets/mascot.webp?v=34" alt="المأمون"><div class="coach-talk"><b id="coachTitle">استمع أولًا</b><span id="coachText">سنسمع الصوت، ثم نميّزه، ثم ننطقه.</span></div><div class="skill-progress"><span>إتقان المهارة</span><div class="bar"><b id="skillBar"></b></div><small id="skillStatus">يحتاج إلى تدريب</small></div></aside>
+      <aside class="coach"><img src="assets/mascot.webp?v=36" alt="المأمون"><div class="coach-talk"><b id="coachTitle">استمع أولًا</b><span id="coachText">سنسمع الصوت، ثم نميّزه، ثم ننطقه.</span></div><div class="skill-progress"><span>إتقان المهارة</span><div class="bar"><b id="skillBar"></b></div><small id="skillStatus">يحتاج إلى تدريب</small></div></aside>
       <main id="activityBoard" class="activity-board"></main>
     </div>
   </section>
@@ -172,8 +187,8 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
   <section id="checkScreen" class="screen write-screen"><div class="top-hud simple"><button id="checkBackBtn" class="round-btn" aria-label="العودة للخريطة">→</button><div class="hud-title"><span class="ab-icon" aria-hidden="true">أب</span> فحص الحروف <small class="gloss-inline" dir="ltr">Letter check</small></div><div class="hud-stats"><span class="hud-pill">⭐ <b id="checkPoints">0</b></span><button class="toggle-btn" data-toggle="help" aria-label="English help">EN</button><button class="toggle-btn" data-toggle="tl" aria-label="Sound spelling">Aa</button></div></div><main id="checkBoard" class="activity-board write-board"></main></section>
   <section id="overlay" class="overlay hidden" role="dialog" aria-modal="true"><div id="overlayCard" class="overlay-card"></div></section>
 </div>
-<script src="assets/config.js?v=34"></script>
-<script src="assets/content.js?v=34"></script>
-<script src="assets/game.js?v=34"></script>
+<script src="assets/config.js?v=36"></script>
+<script src="assets/content.js?v=36"></script>
+<script src="assets/game.js?v=36"></script>
 </body>
 </html>
