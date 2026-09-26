@@ -440,7 +440,7 @@ function vowelledOf(bare){return Object.keys(VOCAB).find(k=>norm(k)===norm(bare)
 function letterName(l){const L=ALPHABET.find(x=>x.l===l);return L?L.name:l}
 
 /* لوح التتبّع: يرسم الطالب فوق الحرف الرمادي، ونقيس نسبة تغطية الحرف ونسبة الخروج عنه */
-function tracePad(host,glyph,{practice=false,onResult}={}){
+function tracePad(host,glyph,{practice=false,onResult}={}){if(glyph==='ا')glyph='أ';
  host.innerHTML=`<div class="trace-wrap"><canvas class="trace-guide" aria-hidden="true"></canvas><canvas class="trace-ink" aria-label="لوح الكتابة — ارسم فوق الحرف"></canvas><span class="trace-hint">☝️</span></div><div class="sound-actions trace-actions"><button class="control-btn" data-clear>🧽 امسح ${G('Clear')}</button><button class="big-btn primary" data-tcheck>تحقّق ✓</button></div><div class="feedback trace-feed" data-tfeed>ارسم بإصبعك فوق الحرف الرمادي. ${G('Trace over the grey letter with your finger.')}</div>`;
  const wrap=host.querySelector('.trace-wrap'),guide=host.querySelector('.trace-guide'),ink=host.querySelector('.trace-ink'),feed=host.querySelector('[data-tfeed]');
  const dpr=Math.min(2,window.devicePixelRatio||1);let W=0,font=null,drawn=false,drawing=false,last=null,done=false;
