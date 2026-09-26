@@ -8,11 +8,18 @@ const C=window.MAAMOON_CONTENT;
 const CFG=window.MAAMOON_CONFIG||{};const CLOUD=!!(CFG.supabaseUrl&&CFG.supabaseAnonKey);var cloudReadyFlag=false;
 const {BANK,DIAG,FINAL,LEVELS,ALPHABET,VOCAB,WRITING}=C;
 
+/* V36.10: استبدال سؤال الجملة المربك في التشخيص بسؤال بصري أبسط. */
+try{
+ const badDiag=DIAG.findIndex(d=>/الجملة الصحيحة/u.test(String(d&&d.q||''))||((d&&d.opts)||[]).some(o=>typeof o==='string'&&/مَدْرَسَتِي|مدرستي/u.test(o)));
+ if(badDiag>=0)DIAG.splice(badDiag,1,{domain:'sentences',q:'أَيُّ جُمْلَةٍ تُنَاسِبُ الصُّورَةَ؟',en:'Which sentence matches the picture?',show:'📖',opts:['أَنَا أَقْرَأُ كِتَابًا.','أَنَا أَشْرَبُ مَاءً.','أَنَا أَلْعَبُ بِالكُرَةِ.'],ans:0});
+}catch{}
+
+
 /* مفاتيح الحفظ لم تتغير عمدًا حتى تبقى بيانات الطلبة من النسخ السابقة */
 const DB_KEY='almaamoon_v26_db',SESSION_KEY='almaamoon_v26_session',SETTINGS_KEY='almaamoon_v26_settings';
 
 const STAGES=[
- {zone:'عالم الحروف',zoneEn:'Letter World',place:'قلعة البحرين',skill:'الحروف والحركات والمدود',skillEn:'Letters, short & long vowels',key:'letters',icon:'<span class="ab-icon" aria-hidden="true">أب</span>',reward:'🔑',rewardName:'مفتاح الحروف',canDo:'أستطيع أن أميّز الحروف والحركات والمدود الأساسية.',canDoEn:'I can recognise letters, short vowels and long vowels.',desc:'استمع إلى الحرف أو المقطع ثم اختره.',descEn:'Listen to the letter or syllable, then choose it.'},
+ {zone:'عالم الحروف',zoneEn:'Letter World',place:'قلعة البحرين',skill:'الحروف والحركات والمدود',skillEn:'Letters, short & long vowels',key:'letters',icon:'<span class="ab-icon" aria-hidden="true">أ ب ت</span>',reward:'🔑',rewardName:'مفتاح الحروف',canDo:'أستطيع أن أميّز الحروف والحركات والمدود الأساسية.',canDoEn:'I can recognise letters, short vowels and long vowels.',desc:'استمع إلى الحرف أو المقطع ثم اختره.',descEn:'Listen to the letter or syllable, then choose it.'},
  {zone:'عالم الحروف',zoneEn:'Letter World',place:'باب البحرين',skill:'الأصوات المتشابهة',skillEn:'Similar sounds',key:'sounds',icon:'🎙️',reward:'🎧',rewardName:'وسام الأذن الذهبية',canDo:'أستطيع أن أميّز بين الأصوات العربية المتشابهة.',canDoEn:'I can hear the difference between similar Arabic sounds.',desc:'تسمع صوتًا واحدًا من زوج متشابه. أيّهما سمعت؟',descEn:'You hear one sound from a similar pair. Which one was it?'},
  {zone:'عالم الكلمات',zoneEn:'Word World',place:'متحف البحرين الوطني',skill:'قراءة الكلمات',skillEn:'Reading words',key:'wordReading',icon:'📖',reward:'📘',rewardName:'مفتاح الكلمات',canDo:'أستطيع أن أقرأ كلمات مألوفة بنفسي.',canDoEn:'I can read familiar words by myself.',desc:'اقرأ الكلمة بنفسك. المس الحروف لتسمعها.',descEn:'Read the word yourself. Tap the letters to hear them.'},
  {zone:'عالم الكلمات',zoneEn:'Word World',place:'شجرة الحياة',skill:'معنى الكلمات',skillEn:'Word meaning',key:'wordMeaning',icon:'🌳',reward:'🌱',rewardName:'بذرة المفردات',canDo:'أستطيع أن أفهم معنى كلمات مألوفة.',canDoEn:'I understand the meaning of familiar words.',desc:'طابق الكلمة بصورتها.',descEn:'Match each word to its picture.'},
@@ -113,28 +120,28 @@ function toggleTranslit(){const s=current();if(!s)return;s.translit=!s.translit;
 
 /* ================= الصوت ================= */
 let arabicVoice=null;
-function pickVoice(){if(!('speechSynthesis'in window))return;const vs=speechSynthesis.getVoices();arabicVoice=vs.find(v=>/^ar[-_]BH/i.test(v.lang))||vs.find(v=>/^ar[-_](SA|AE|KW|QA|OM)/i.test(v.lang))||vs.find(v=>/^ar/i.test(v.lang))||null}
+function pickVoice(){if(!('speechSynthesis'in window))return;const vs=speechSynthesis.getVoices();const ar=vs.filter(v=>/^ar(?:[-_]|$)/i.test(v.lang));arabicVoice=ar.find(v=>/^ar[-_]SA/i.test(v.lang)&&v.localService)||ar.find(v=>/^ar[-_]SA/i.test(v.lang))||ar.find(v=>v.localService)||ar[0]||null}
 if('speechSynthesis'in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
-function hasArabicVoice(){return !!arabicVoice}
+function hasArabicVoice(){return true}
 function audioKey(text){return String(text||'').normalize('NFC').replace(/\s+/g,' ').trim()}
-function recordedAudio(text){const lib=db.audioLibrary||{};const k=audioKey(text);if(lib[k])return lib[k];/* تسجيلات النسخ السابقة كانت تُحفظ بلا حركات */const old=norm(text);return old.length>2?lib[old]:null}
-let currentAudio=null;
-function stopAudio(){if(currentAudio){try{currentAudio.pause()}catch{}currentAudio=null}if('speechSynthesis'in window)speechSynthesis.cancel()}
-function speak(text,rate=.85,onEnd){if(!settings.sound||!text){if(onEnd)later(onEnd,50);return}if(rate<=.55&&!onEnd)return speakSlow(text);stopAudio();const src=recordedAudio(text);if(src){try{currentAudio=new Audio(src);currentAudio.playbackRate=Math.max(.6,Math.min(1.15,rate/.85));if(onEnd)currentAudio.onended=onEnd;currentAudio.play().catch(()=>{if(onEnd)onEnd()});return}catch{}}
- if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(text);u.lang=arabicVoice?arabicVoice.lang:'ar-SA';u.rate=rate;if(arabicVoice)u.voice=arabicVoice;if(onEnd){let fired=false;const fin=()=>{if(!fired){fired=true;onEnd()}};u.onend=fin;u.onerror=fin}speechSynthesis.speak(u)}else if(onEnd)later(onEnd,600)}
-/* يقرأ الخيارات واحدًا واحدًا ويضيء الزر المقروء — بدل «الخيار 1، الخيار 2» */
-/* iPad/iPhone: الصوت لا يعمل قبل أول لمسة، فنفتحه عند أول لمسة في الصفحة */
-function unlockAudio(){try{if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}const A=window.AudioContext||window.webkitAudioContext;if(A){beep.ctx=beep.ctx||new A();if(beep.ctx.state==='suspended')beep.ctx.resume()}}catch{}}
+function recordedAudio(text){const lib=db.audioLibrary||{};const k=audioKey(text);if(lib[k])return lib[k];const old=norm(text);return old.length>2?lib[old]:null}
+let currentAudio=null,aiTtsCtx=null,aiTtsSource=null,aiTtsAbort=null,audioRunId=0;
+const aiTtsCache=new Map();
+function getAiTtsCtx(){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;if(!aiTtsCtx)aiTtsCtx=new A();return aiTtsCtx}
+function stopAudio(){audioRunId++;if(aiTtsAbort){try{aiTtsAbort.abort()}catch{}aiTtsAbort=null}if(aiTtsSource){try{aiTtsSource.stop()}catch{}aiTtsSource=null}if(currentAudio){try{currentAudio.pause()}catch{}currentAudio=null}if('speechSynthesis'in window)speechSynthesis.cancel()}
+function isLongVowelSyllable(text){const t=audioKey(text);return /^[ء-ي]َا$/u.test(t)||/^[ء-ي]ُو$/u.test(t)||/^[ء-ي]ِي$/u.test(t)}
+function isShortVowelSyllable(text){return /^[ء-ي][َُِ]$/u.test(audioKey(text))}
+function isCriticalSyllable(text){return isShortVowelSyllable(text)||isLongVowelSyllable(text)}
+function browserSpeak(clean,rate=.85,onEnd){if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(clean);u.lang=arabicVoice?arabicVoice.lang:'ar-SA';u.rate=Math.max(.62,rate);u.pitch=1;u.volume=1;if(arabicVoice)u.voice=arabicVoice;if(onEnd){let fired=false;const fin=()=>{if(!fired){fired=true;onEnd()}};u.onend=fin;u.onerror=fin}speechSynthesis.speak(u)}else if(onEnd)later(onEnd,600)}
+async function aiSpeak(clean,slow,onEnd,runId){const key=(slow?'S|':'N|')+clean;try{let buf=aiTtsCache.get(key);if(!buf){const ctl=new AbortController();aiTtsAbort=ctl;const r=await fetch('/api/mamoun-tts',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text:clean,slow:!!slow}),signal:ctl.signal});if(!r.ok)throw new Error('tts_'+r.status);buf=await r.arrayBuffer();document.documentElement.dataset.aiVoice='on';window.dispatchEvent(new CustomEvent('maamoon-ai-voice',{detail:{ok:true}}));if(aiTtsCache.size>80)aiTtsCache.delete(aiTtsCache.keys().next().value);aiTtsCache.set(key,buf.slice(0))}if(runId!==audioRunId)return;const ctx=getAiTtsCtx();if(!ctx)throw new Error('no_audio_context');if(ctx.state==='suspended')await ctx.resume();const decoded=await ctx.decodeAudioData(buf.slice(0));if(runId!==audioRunId)return;const src=ctx.createBufferSource();src.buffer=decoded;src.connect(ctx.destination);aiTtsSource=src;src.onended=()=>{if(runId!==audioRunId)return;aiTtsSource=null;if(onEnd)onEnd()};src.start(0)}catch(e){if(e&&e.name==='AbortError')return;if(runId!==audioRunId)return;document.documentElement.dataset.aiVoice='off';window.dispatchEvent(new CustomEvent('maamoon-ai-voice',{detail:{ok:false}}));if(isCriticalSyllable(clean)){flash('⚠️ صوت OpenAI غير متصل. فعّلي OPENAI_API_KEY في Netlify حتى نميّز الحركة القصيرة من المد بدقة.');if(onEnd)later(onEnd,250);return}browserSpeak(clean,slow?.68:.85,onEnd)}}
+function speak(text,rate=.85,onEnd){if(!settings.sound||!text){if(onEnd)later(onEnd,50);return}const clean=audioKey(text);if(rate<=.55&&!onEnd)return speakSlow(clean);stopAudio();const runId=audioRunId;const src=recordedAudio(clean);if(src){try{currentAudio=new Audio(src);currentAudio.playbackRate=isLongVowelSyllable(clean)?1:Math.max(.7,Math.min(1.12,rate/.85));if(onEnd)currentAudio.onended=onEnd;currentAudio.play().catch(()=>browserSpeak(clean,rate,onEnd));return}catch{}}return aiSpeak(clean,rate<.7,onEnd,runId)}
+/* iPad/iPhone: نفتح AudioContext عند أول لمسة حتى يمكن تشغيل صوت OpenAI بعد اكتمال الشبكة. */
+function unlockAudio(){try{const c=getAiTtsCtx();if(c&&c.state==='suspended')c.resume();if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}const A=window.AudioContext||window.webkitAudioContext;if(A){beep.ctx=beep.ctx||new A();if(beep.ctx.state==='suspended')beep.ctx.resume()}}catch{}}
 ['pointerdown','touchend','click'].forEach(t=>document.addEventListener(t,unlockAudio,{once:true,capture:true}));
-function speakSeries(items,rate=.8,onEach,gap){if(!settings.sound||!items||!items.length)return;const pause=gap||(rate<=.6?550:250);let i=0;const next=()=>{if(onEach)onEach(i);if(i>=items.length)return;const t=items[i++];speak(t,rate,()=>later(next,pause))};next()}
-/* «ببطء»: كثير من الأصوات لا تبطئ المقطع القصير فعليًا، لذلك نقسّم الصوت:
-   الجملة كلمةً كلمة، والكلمة مقطعًا مقطعًا ثم كاملة، والحرف أو المقطع مرتين ببطء */
+function speakSeries(items,rate=.8,onEach,gap){if(!settings.sound||!items||!items.length)return;const pause=gap||(rate<=.6?500:220);let i=0;const next=()=>{if(i>=items.length){if(onEach)onEach(i);return}if(onEach)onEach(i);const t=items[i++];speak(t,rate,()=>later(next,pause))};next()}
+/* «ببطء» في V36.8 يستخدم نطقًا فصيحًا بطيئًا طبيعيًا من OpenAI بدل تشويه سرعة Safari. */
 function syllables(w){const out=[];graphemes(w).forEach(g=>{const vowel=/[َُِ]/.test(g)&&!/ْ/.test(g);if(vowel||!out.length)out.push(g);else out[out.length-1]+=g});return out}
-function speakSlow(text){const t=String(text).trim();if(!t)return;
- if(recordedAudio(t))return speakSeries([t,t],.5,null,700);
- const words=t.split(/\s+/);if(words.length>1)return speakSeries(words,.5,null,650);
- const syl=syllables(t);if(syl.length<=1)return speakSeries([t,t],.45,null,800);
- return speakSeries([...syl,t],.5,null,500)}
+function speakSlow(text){const t=audioKey(text);if(!t||!settings.sound)return;stopAudio();const runId=audioRunId;const src=recordedAudio(t);if(src){try{currentAudio=new Audio(src);currentAudio.playbackRate=.78;currentAudio.play().catch(()=>browserSpeak(t,.68));return}catch{}}return aiSpeak(t,true,null,runId)}
 function readButtons(box,texts){const btns=[...box.querySelectorAll('.choice')];speakSeries(texts,.78,i=>btns.forEach((b,j)=>b.classList.toggle('speaking',j===i)))}
 
 /* ================= واجهة ================= */
@@ -223,7 +230,7 @@ function finishDiagnostic(){const s=current();const per=d=>Math.round(diagScore[
  /* كل مهارة تبدأ من مستوى نطاقها في التشخيص */
  const dt=p=>p<35?0:p<55?1:p<80?2:3;s.skillTier={letters:dt(domains.letters),sounds:dt(domains.letters),wordReading:dt(domains.words),wordMeaning:dt(domains.words),sentenceBuild:dt(domains.sentences),sentenceListen:dt(domains.sentences),sentenceOrder:dt(domains.sentences),fluency:Math.min(dt(domains.words),dt(domains.sentences)),writing:Math.min(dt(domains.letters),dt(domains.words),2)};
  s.cefr=cefrFrom(total);s.diagnosticDone=true;/* الطالب الضعيف جدًا في الحروف يمر بفحص الحروف الـ28 قبل المحطة الأولى */if(domains.letters<50&&!s.completed[0])s.letterCheck=true;s.stage=0;s.mastery.letters=Math.min(70,domains.letters);s.mastery.wordReading=Math.min(60,domains.words);s.mastery.sentenceBuild=Math.min(50,domains.sentences);persist();
- overlay(`<div class="center"><div class="big-emoji">🎯</div><h2>اكتمل الاختبار!</h2>${G('Check complete!')}<div class="path-preview center-row"><span><span class="ab-icon" aria-hidden="true">أب</span> الحروف ${domains.letters}%</span><span>🧩 الكلمات ${domains.words}%</span><span>💬 الجمل ${domains.sentences}%</span></div><p>مستواك الآن: <b dir="ltr">${s.cefr}</b></p><div class="support-box">سنبدأ دائمًا من <b>الحروف</b> ثم الكلمات ثم الجمل، وصعوبة الأسئلة تناسب مستواك. تنتقل إلى المحطة التالية عندما تحصل على 80% أو أكثر.${G('We always start with letters, then words, then sentences. Questions match your level. Score 80% to open the next station.')}</div><button class="big-btn primary" id="openWorld">ابدأ الرحلة ▶</button></div>`);$('openWorld').onclick=()=>{closeOverlay();prepareWorld();show('worldScreen')}}
+ overlay(`<div class="center"><div class="big-emoji">🎯</div><h2>اكتمل الاختبار!</h2>${G('Check complete!')}<div class="path-preview center-row"><span><span class="ab-icon" aria-hidden="true">أ ب ت</span> الحروف ${domains.letters}%</span><span>🧩 الكلمات ${domains.words}%</span><span>💬 الجمل ${domains.sentences}%</span></div><p>مستواك الآن: <b dir="ltr">${s.cefr}</b></p><div class="support-box">سنبدأ دائمًا من <b>الحروف</b> ثم الكلمات ثم الجمل، وصعوبة الأسئلة تناسب مستواك. تنتقل إلى المحطة التالية عندما تحصل على 80% أو أكثر.${G('We always start with letters, then words, then sentences. Questions match your level. Score 80% to open the next station.')}</div><button class="big-btn primary" id="openWorld">ابدأ الرحلة ▶</button></div>`);$('openWorld').onclick=()=>{closeOverlay();prepareWorld();show('worldScreen')}}
 
 
 /* ================= الخريطة ================= */
@@ -235,7 +242,7 @@ function prepareWorld(){const s=current();if(!s)return show('startScreen');refre
  selectStage(Math.min(s.stage,8),false);setupPanelToggle();requestAnimationFrame(drawPathDots);
  document.querySelectorAll('.game-nav button').forEach(b=>{b.classList.toggle('active',b.dataset.tab==='world');b.onclick=()=>navTab(b.dataset.tab)});
  $('profileChip').onclick=showProfile;$('worldSoundBtn').textContent=settings.sound?'🔊':'🔇';$('worldSoundBtn').onclick=()=>{settings.sound=!settings.sound;persist();$('worldSoundBtn').textContent=settings.sound?'🔊':'🔇';beep(true)}}
-function selectStage(i,move){const s=current();if(!stageUnlocked(s,i))return;selectedStage=i;const st=STAGES[i];$('missionZone').innerHTML=esc(st.zone)+G(st.zoneEn);$('missionPlace').textContent=st.place;$('missionSkill').innerHTML=esc(st.skill)+G(st.skillEn);$('missionDesc').innerHTML=esc(st.desc)+G(st.descEn);$('missionCanDo').innerHTML='🎯 '+esc(st.canDo)+G(st.canDoEn);$('missionReward').innerHTML=`${st.reward} ${esc(st.rewardName)}${s.stars[i]?` <span class="mission-stars">${starText(s.stars[i])}</span>`:''}`;renderMissionList(i);if(i===0&&needsLetterCheck(s)){$('missionCanDo').innerHTML+=`<div class="lc-mini"><span class="ab-icon" aria-hidden="true">أب</span> فحص الحروف أولًا: تعرف <b>${knownCount(s)}</b> من 28 — تحتاج ${LC_TARGET} ${G('Letter check first')}</div>`}if(move){moveExplorer(i);sparkAtNode(i);if(i!==8)speak(st.skill,.85)}}
+function selectStage(i,move){const s=current();if(!stageUnlocked(s,i))return;selectedStage=i;const st=STAGES[i];$('missionZone').innerHTML=esc(st.zone)+G(st.zoneEn);$('missionPlace').textContent=st.place;$('missionSkill').innerHTML=esc(st.skill)+G(st.skillEn);$('missionDesc').innerHTML=esc(st.desc)+G(st.descEn);$('missionCanDo').innerHTML='🎯 '+esc(st.canDo)+G(st.canDoEn);$('missionReward').innerHTML=`${st.reward} ${esc(st.rewardName)}${s.stars[i]?` <span class="mission-stars">${starText(s.stars[i])}</span>`:''}`;renderMissionList(i);if(i===0&&needsLetterCheck(s)){$('missionCanDo').innerHTML+=`<div class="lc-mini"><span class="ab-icon" aria-hidden="true">أ ب ت</span> فحص الحروف أولًا: تعرف <b>${knownCount(s)}</b> من 28 — تحتاج ${LC_TARGET} ${G('Letter check first')}</div>`}if(move){moveExplorer(i);sparkAtNode(i);if(i!==8)speak(st.skill,.85)}}
 function moveExplorer(i){const n=document.querySelector(`.station-node[data-stage="${i}"]`),ex=$('explorer');ex.style.left=n.style.getPropertyValue('--x');ex.style.top=n.style.getPropertyValue('--y')}
 function sparkAtNode(i){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const n=document.querySelector(`.station-node[data-stage="${i}"]`),box=$('sparkles');for(let k=0;k<10;k++){const s=document.createElement('span');s.className='spark';s.textContent=k%2?'✨':'⭐';s.style.left=`calc(${n.style.getPropertyValue('--x')} + ${(Math.random()*50-25)}px)`;s.style.top=`calc(${n.style.getPropertyValue('--y')} + ${(Math.random()*40-20)}px)`;box.appendChild(s);setTimeout(()=>s.remove(),1000)}}
 function launchStage(i,mi,force){const s=current();if(i===0&&needsLetterCheck(s))return openLetterCheck();
@@ -497,7 +504,7 @@ function tracePad(host,glyph,{practice=false,onResult}={}){
 /* بطاقة الدخول إلى الورشة */
 function openWorkshop(){const s=current();if(!s)return show('startScreen');show('writeScreen');refreshHud();const t=tierFor('writing');const b=wboard();
  const levelText=['حروف منفصلة','حروف أصعب','أشكال الحرف في الكلمة','كلمات كاملة'][t],levelEn=['Single letters','Harder letters','Letter shapes in words','Whole words'][t];
- b.innerHTML=`<div class="write-intro"><div class="big-emoji">✍️</div><h2>ورشة الكتابة</h2>${G('Writing workshop')}<p class="prompt-ar">تتبّع ٣ حروف بإصبعك، ثم كوّن ٤ كلمات من حروفها.</p>${G('Trace 3 letters with your finger, then build 4 words from their letters.')}<div class="path-preview center-row"><span>المستوى ${t+1}: ${levelText}</span>${s.writeStars?`<span class="mission-stars">${starText(s.writeStars)}</span>`:''}<span>إتقان الكتابة ${s.attempts.writing?(s.mastery.writing||0)+'%':'—'}</span></div>${G('Level '+(t+1)+': '+levelEn)}<div class="form-actions center-row"><button class="big-btn ghost" data-lab><span class="ab-icon" aria-hidden="true">أب</span> مختبر الحروف</button><button class="big-btn primary" data-start>ابدأ الكتابة ▶</button></div></div>`;
+ b.innerHTML=`<div class="write-intro"><div class="big-emoji">✍️</div><h2>ورشة الكتابة</h2>${G('Writing workshop')}<p class="prompt-ar">تتبّع ٣ حروف بإصبعك، ثم كوّن ٤ كلمات من حروفها.</p>${G('Trace 3 letters with your finger, then build 4 words from their letters.')}<div class="path-preview center-row"><span>المستوى ${t+1}: ${levelText}</span>${s.writeStars?`<span class="mission-stars">${starText(s.writeStars)}</span>`:''}<span>إتقان الكتابة ${s.attempts.writing?(s.mastery.writing||0)+'%':'—'}</span></div>${G('Level '+(t+1)+': '+levelEn)}<div class="form-actions center-row"><button class="big-btn ghost" data-lab><span class="ab-icon" aria-hidden="true">أ ب ت</span> مختبر الحروف</button><button class="big-btn primary" data-start>ابدأ الكتابة ▶</button></div></div>`;
  b.querySelector('[data-start]').onclick=()=>runWriting();b.querySelector('[data-lab]').onclick=()=>openLab('writeScreen');setCombo(0)}
 
 function runWriting(){const t=tierFor('writing');const traces=freshSample('trace'+t,WRITING.trace[t],3),spells=freshSample('spell'+t,WRITING.spell[t],4);
@@ -540,7 +547,7 @@ function finishWriting(correct,total){const s=current();const score=Math.round(c
  if(pass){const stars=score>=100?3:score>=90?2:1;const first=!s.writeStars;s.writeStars=Math.max(s.writeStars||0,stars);s.points+=first?25+stars*10:stars*5;let up=false;if(score>=95&&t<3){s.skillTier.writing=t+1;up=true}s.failStreak=s.failStreak||{};s.failStreak.writing=0;persist();refreshHud();confetti();
   b.innerHTML=`<div class="stage-finish"><div class="trophy">✍️</div><h2>كاتب ماهر!</h2>${G('Great writer!')}<div class="stars-row">${[1,2,3].map(n=>`<span class="${n<=stars?'on':''}" style="animation-delay:${n*.18}s">★</span>`).join('')}</div><div class="mastery-badge">${score}%</div>${first?`<div class="sticker-won"><span>✍️</span><b>قلم الكاتب</b>${G('New sticker!')}</div>`:''}${up?`<p class="level-up">⬆️ انتقلت إلى مستوى كتابة أعلى! ${G('Your writing level went up!')}</p>`:''}<div class="form-actions center-row"><button class="big-btn ghost" data-again>🔁 جولة جديدة</button><button class="big-btn primary" data-map>العودة للخريطة ▶</button></div></div>`}
  else{s.failStreak=s.failStreak||{};s.failStreak.writing=(s.failStreak.writing||0)+1;let eased=false;if(s.failStreak.writing>=2&&t>0){s.skillTier.writing=t-1;s.failStreak.writing=0;eased=true}persist();
-  b.innerHTML=`<div class="stage-finish"><div class="trophy">🛟</div><h2>تحتاج إلى تدريب أكثر</h2>${G('Let\'s practise more.')}<div class="mastery-badge support-score">${score}%</div><p>جرّب مختبر الحروف لتتدرب على كتابة الحروف، ثم العب جولة جديدة.</p>${G('Practise writing letters in the Letter Lab, then play a new round.')}${eased?`<p class="level-up">الجولة القادمة أسهل قليلًا. ${G('The next round will be a little easier.')}</p>`:''}<div class="form-actions center-row"><button class="big-btn ghost" data-lab><span class="ab-icon" aria-hidden="true">أب</span> مختبر الحروف</button><button class="big-btn primary" data-again>🔁 جولة جديدة</button></div></div>`}
+  b.innerHTML=`<div class="stage-finish"><div class="trophy">🛟</div><h2>تحتاج إلى تدريب أكثر</h2>${G('Let\'s practise more.')}<div class="mastery-badge support-score">${score}%</div><p>جرّب مختبر الحروف لتتدرب على كتابة الحروف، ثم العب جولة جديدة.</p>${G('Practise writing letters in the Letter Lab, then play a new round.')}${eased?`<p class="level-up">الجولة القادمة أسهل قليلًا. ${G('The next round will be a little easier.')}</p>`:''}<div class="form-actions center-row"><button class="big-btn ghost" data-lab><span class="ab-icon" aria-hidden="true">أ ب ت</span> مختبر الحروف</button><button class="big-btn primary" data-again>🔁 جولة جديدة</button></div></div>`}
  const a=b.querySelector('[data-again]');if(a)a.onclick=()=>runWriting();const m=b.querySelector('[data-map]');if(m)m.onclick=()=>{prepareWorld();show('worldScreen')};const l=b.querySelector('[data-lab]');if(l)l.onclick=()=>openLab('writeScreen')}
 
 /* ================= فحص الحروف الـ28 (للطالب الضعيف جدًا) =================
@@ -563,7 +570,7 @@ function pickSessionLetters(s){const t=today();const rank=L=>{const st=letterSta
  return order.slice(0,LC_GROUP).map(x=>x.L)}
 
 function openLetterCheck(from){const s=current();if(!s)return;show('checkScreen');refreshHud();const b=$('checkBoard');const k=knownCount(s);
- b.innerHTML=`<div class="write-intro"><div class="big-emoji"><span class="ab-icon" aria-hidden="true">أب</span></div><h2>فحص الحروف</h2>${G('Letter check')}<p class="prompt-ar">${s.completed[0]||!s.letterCheck?'تدرّب على الحروف التي لم تتقنها بعد.':`قبل المحطة الأولى، نتأكد أنك تعرف الحروف. تحتاج ${LC_TARGET} حرفًا من 28.`}</p>${G(s.completed[0]||!s.letterCheck?'Practise the letters you have not mastered yet.':`Before the first station, let's make sure you know the letters. You need ${LC_TARGET} of 28.`)}<div class="lc-progress"><b>${k}</b> / 28<div class="bar"><b style="width:${Math.round(k/28*100)}%"></b></div></div>${letterGrid(s)}<p class="note">كل جلسة 7 حروف. الحرف يصبح أخضر عندما تعرفه في يومين مختلفين. ${G('7 letters per session. A letter turns green when you know it on two different days.')}</p><div class="form-actions center-row"><button class="big-btn ghost" data-lab><span class="ab-icon" aria-hidden="true">أب</span> مختبر الحروف</button>${k<28?'<button class="big-btn primary" data-go>ابدأ الجلسة ▶</button>':''}</div></div>`;
+ b.innerHTML=`<div class="write-intro"><div class="big-emoji"><span class="ab-icon" aria-hidden="true">أ ب ت</span></div><h2>فحص الحروف</h2>${G('Letter check')}<p class="prompt-ar">${s.completed[0]||!s.letterCheck?'تدرّب على الحروف التي لم تتقنها بعد.':`قبل المحطة الأولى، نتأكد أنك تعرف الحروف. تحتاج ${LC_TARGET} حرفًا من 28.`}</p>${G(s.completed[0]||!s.letterCheck?'Practise the letters you have not mastered yet.':`Before the first station, let's make sure you know the letters. You need ${LC_TARGET} of 28.`)}<div class="lc-progress"><b>${k}</b> / 28<div class="bar"><b style="width:${Math.round(k/28*100)}%"></b></div></div>${letterGrid(s)}<p class="note">كل جلسة 7 حروف. الحرف يصبح أخضر عندما تعرفه في يومين مختلفين. ${G('7 letters per session. A letter turns green when you know it on two different days.')}</p><div class="form-actions center-row"><button class="big-btn ghost" data-lab><span class="ab-icon" aria-hidden="true">أ ب ت</span> مختبر الحروف</button>${k<28?'<button class="big-btn primary" data-go>ابدأ الجلسة ▶</button>':''}</div></div>`;
  const go=b.querySelector('[data-go]');if(go)go.onclick=runLetterCheck;b.querySelector('[data-lab]').onclick=()=>openLab('checkScreen')}
 
 function runLetterCheck(){const s=current();const letters=pickSessionLetters(s);if(!letters.length)return openLetterCheck();
@@ -577,7 +584,7 @@ function runLetterCheck(){const s=current();const letters=pickSessionLetters(s);
  const res={};let i=0;const b=$('checkBoard');setCombo(0);
  function draw(){const q=order[i];clearTimers();stopAudio();
   const isSound=q.type==='sound';
-  b.innerHTML=activityHead('فَحْصُ الحُرُوفِ','Letter check',i,order.length,'<span class="ab-icon" aria-hidden="true">أب</span> '+letters.map(x=>x.l).join(' '))+
+  b.innerHTML=activityHead('فَحْصُ الحُرُوفِ','Letter check',i,order.length,'<span class="ab-icon" aria-hidden="true">أ ب ت</span> '+letters.map(x=>x.l).join(' '))+
    `<p class="prompt-ar">${isSound?'اسْتَمِعْ، ثُمَّ اخْتَرِ الحَرْفَ.':'أَيُّ صُورَةٍ تَبْدَأُ بِهَذَا الحَرْفِ؟'}</p>${G(isSound?'Listen, then choose the letter.':'Which picture starts with this letter?')}`+
    `<div class="activity-target ${isSound?'listen-target':''}">${isSound?'🎧':`<span class="ar-text lc-show">${q.l}</span>`}</div>`+
    `${isSound?'<div class="sound-actions"><button class="control-btn" data-hear>🔊 استمع</button><button class="control-btn" data-slow>🐢 ببطء</button></div>':''}<div data-c></div><div class="feedback" data-feed></div><div class="after-actions" data-after></div>`;
@@ -590,7 +597,7 @@ function runLetterCheck(){const s=current();const letters=pickSessionLetters(s);
  }
  function nxt(){i++;if(i<order.length)draw();else finish()}
  function finish(){const s=current();letters.forEach(L=>recordLetter(s,L.l,!!res[L.l]));s.attempts.letterCheck=(s.attempts.letterCheck||0)+1;const got=letters.filter(L=>res[L.l]).length;s.points+=got*2;persist();refreshHud();const k=knownCount(s);const opened=s.letterCheck&&!s.completed[0]&&k>=LC_TARGET;if(got>=5)confetti();
-  b.innerHTML=`<div class="stage-finish"><div class="trophy">${opened?'🔓':'<span class="ab-icon" aria-hidden="true">أب</span>'}</div><h2>${opened?'فتحت المحطة الأولى!':'انتهت الجلسة'}</h2>${G(opened?'You opened the first station!':'Session finished')}<div class="lc-session">${letters.map(L=>`<span class="lc-cell ${res[L.l]?'learning':'weak'}">${L.l}<i>${res[L.l]?'✓':'✗'}</i></span>`).join('')}</div><p>عرفت <b>${got}</b> من ${letters.length} حروف في هذه الجلسة.</p>${G(`You knew ${got} of ${letters.length} letters this session.`)}<div class="lc-progress"><b>${k}</b> / 28 ${G('letters mastered')}<div class="bar"><b style="width:${Math.round(k/28*100)}%"></b></div></div>${letterGrid(s)}${!opened&&s.letterCheck&&!s.completed[0]?`<p class="note">الحروف الصحيحة اليوم تصبح خضراء عندما تعرفها مرة أخرى في يوم آخر. ${G('Letters you got right today turn green when you get them right again on another day.')}</p>`:''}<div class="form-actions center-row"><button class="big-btn ghost" data-map>الخريطة</button>${letters.some(L=>!res[L.l])?'<button class="big-btn gold" data-lab><span class="ab-icon" aria-hidden="true">أب</span> راجع في مختبر الحروف</button>':''}${opened?'<button class="big-btn primary" data-open>ابدأ المحطة الأولى ▶</button>':k<28?'<button class="big-btn primary" data-again>جلسة جديدة ▶</button>':''}</div></div>`;
+  b.innerHTML=`<div class="stage-finish"><div class="trophy">${opened?'🔓':'<span class="ab-icon" aria-hidden="true">أ ب ت</span>'}</div><h2>${opened?'فتحت المحطة الأولى!':'انتهت الجلسة'}</h2>${G(opened?'You opened the first station!':'Session finished')}<div class="lc-session">${letters.map(L=>`<span class="lc-cell ${res[L.l]?'learning':'weak'}">${L.l}<i>${res[L.l]?'✓':'✗'}</i></span>`).join('')}</div><p>عرفت <b>${got}</b> من ${letters.length} حروف في هذه الجلسة.</p>${G(`You knew ${got} of ${letters.length} letters this session.`)}<div class="lc-progress"><b>${k}</b> / 28 ${G('letters mastered')}<div class="bar"><b style="width:${Math.round(k/28*100)}%"></b></div></div>${letterGrid(s)}${!opened&&s.letterCheck&&!s.completed[0]?`<p class="note">الحروف الصحيحة اليوم تصبح خضراء عندما تعرفها مرة أخرى في يوم آخر. ${G('Letters you got right today turn green when you get them right again on another day.')}</p>`:''}<div class="form-actions center-row"><button class="big-btn ghost" data-map>الخريطة</button>${letters.some(L=>!res[L.l])?'<button class="big-btn gold" data-lab><span class="ab-icon" aria-hidden="true">أ ب ت</span> راجع في مختبر الحروف</button>':''}${opened?'<button class="big-btn primary" data-open>ابدأ المحطة الأولى ▶</button>':k<28?'<button class="big-btn primary" data-again>جلسة جديدة ▶</button>':''}</div></div>`;
   const q=sel=>b.querySelector(sel);q('[data-map]').onclick=()=>{prepareWorld();show('worldScreen')};if(q('[data-lab]'))q('[data-lab]').onclick=()=>openLab('checkScreen');if(q('[data-again]'))q('[data-again]').onclick=runLetterCheck;if(q('[data-open]'))q('[data-open]').onclick=()=>{prepareWorld();launchStage(0)}}
  draw()}
 
@@ -994,20 +1001,121 @@ function showProfile(){const s=current();if(!s)return;show('profileScreen');cons
  <div class="metric-grid"><div class="metric"><b>${keys(s)}/8</b><span>المحطات${G('Stations')}</span></div><div class="metric"><b>${MISSIONS.reduce((a,_,i)=>a+doneCount(s,i),0)}/${MISSION_TOTAL}</b><span>المهام${G('Missions')}</span></div><div class="metric"><b>${activeDays(s)}</b><span>أيام التعلم${G('Learning days')}</span></div><div class="metric"><b>${s.points}</b><span>النقاط${G('Points')}</span></div><div class="metric"><b>${s.stars.reduce((a,b)=>a+(b||0),0)+(s.writeStars||0)}/30</b><span>النجوم${G('Stars')}</span></div><div class="metric"><b dir="ltr">${esc(s.cefr)}</b><span>CEFR-aligned</span></div></div>
  <h3 class="section-title">ألبوم الملصقات ${G('My sticker book')}</h3>${stickerBook(s)}
  ${s.letterCheck||s.letterMap?`<h3 class="section-title">خريطة حروفي ${G('My letters')} — ${knownCount(s)}/28</h3>${letterGrid(s)}`:''}<h3 class="section-title">مهاراتي ${G('My skills')}</h3><div class="skill-grid">${skillCards(s)}</div>
- <div class="support-box"><h3>🧠 التدريب الذكي ${G('Smart practice')}</h3><p>${esc(supportRecommendation(s))}</p><div class="form-actions"><button class="big-btn primary" id="profileSmartPractice">ابدأ التدريب الذكي ▶</button><button class="big-btn ghost" id="profileLab"><span class="ab-icon" aria-hidden="true">أب</span> مختبر الحروف</button><button class="big-btn gold" id="profileWrite">✍️ ورشة الكتابة</button></div></div>
+ <div class="support-box"><h3>🧠 التدريب الذكي ${G('Smart practice')}</h3><p>${esc(supportRecommendation(s))}</p><div class="form-actions"><button class="big-btn primary" id="profileSmartPractice">ابدأ التدريب الذكي ▶</button><button class="big-btn ghost" id="profileLab"><span class="ab-icon" aria-hidden="true">أ ب ت</span> مختبر الحروف</button><button class="big-btn gold" id="profileWrite">✍️ ورشة الكتابة</button></div></div>
  <div class="settings-row"><button class="toggle-btn" id="profilePin">🔐 تغيير الرقم السري</button><button class="toggle-btn" data-toggle="help">🇬🇧 English help</button><button class="toggle-btn" data-toggle="tl">Aa kitaab</button></div>`;
  $('profileSmartPractice').onclick=launchSmartPractice;$('profileLab').onclick=()=>openLab('profileScreen');$('profilePin').onclick=()=>changeStudentPin(s,()=>showProfile());$('profileWrite').onclick=openWorkshop;bindToggles();applyLearnerPrefs()}
+
+
+/* ================= مدرب النطق بالذكاء الاصطناعي V36.6 ================= */
+let aiPronunciationTarget='',aiPronunciationRecorder=null,aiPronunciationStream=null,aiPronunciationChunks=[],aiPronunciationStopTimer=null;
+
+function aiSetStatus(text,kind=''){
+ const el=$('aiPronunciationStatus');if(!el)return;
+ el.className='ai-pronunciation-status'+(kind?' '+kind:'');
+ el.innerHTML=text;
+}
+function aiSetTarget(t){
+ aiPronunciationTarget=t||'';
+ document.querySelectorAll('.ai-target').forEach(b=>b.classList.toggle('sel',b.dataset.aiTarget===aiPronunciationTarget));
+ const n=$('aiTargetNow');if(n)n.textContent=aiPronunciationTarget;
+ if(aiPronunciationTarget)speak(aiPronunciationTarget,isLongVowelSyllable(aiPronunciationTarget)?.88:.68);
+}
+function audioBufferToWav(audioBuffer){
+ const channels=1,sampleRate=audioBuffer.sampleRate,samples=audioBuffer.getChannelData(0),bytesPerSample=2;
+ const buffer=new ArrayBuffer(44+samples.length*bytesPerSample),view=new DataView(buffer);
+ const write=(off,s)=>{for(let i=0;i<s.length;i++)view.setUint8(off+i,s.charCodeAt(i))};
+ write(0,'RIFF');view.setUint32(4,36+samples.length*2,true);write(8,'WAVE');write(12,'fmt ');
+ view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,channels,true);
+ view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate*channels*bytesPerSample,true);
+ view.setUint16(32,channels*bytesPerSample,true);view.setUint16(34,16,true);write(36,'data');
+ view.setUint32(40,samples.length*bytesPerSample,true);
+ let o=44;for(let i=0;i<samples.length;i++,o+=2){let s=Math.max(-1,Math.min(1,samples[i]));view.setInt16(o,s<0?s*0x8000:s*0x7fff,true)}
+ return new Blob([view],{type:'audio/wav'});
+}
+async function recordingBlobToWav(blob){
+ const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw new Error('audio_context');
+ const ctx=new Ctx();
+ try{
+  const ab=await blob.arrayBuffer();
+  const decoded=await ctx.decodeAudioData(ab.slice(0));
+  return audioBufferToWav(decoded);
+ }finally{try{await ctx.close()}catch{}}
+}
+function saveAIPronunciationResult(target,result){
+ const s=current();if(!s)return;
+ s.aiPronunciation=s.aiPronunciation||{attempts:0,passed:0,best:{},recent:[]};
+ s.aiPronunciation.attempts++;
+ if(result.passed)s.aiPronunciation.passed++;
+ s.aiPronunciation.best[target]=Math.max(s.aiPronunciation.best[target]||0,+result.score||0);
+ s.aiPronunciation.recent.unshift({target,score:+result.score||0,passed:!!result.passed,at:new Date().toISOString()});
+ s.aiPronunciation.recent=s.aiPronunciation.recent.slice(0,20);
+ persist();
+}
+async function sendPronunciationToAI(wav,target){
+ const form=new FormData();form.append('audio',wav,'pronunciation.wav');form.append('target',target);
+ const r=await fetch('/api/pronunciation',{method:'POST',body:form,headers:{'Accept':'application/json'}});
+ let data={};try{data=await r.json()}catch{}
+ if(!r.ok)throw new Error(data.error||'request_failed');
+ return data;
+}
+async function startAIPronunciation(){
+ if(!aiPronunciationTarget)return aiSetStatus('اختَر الصوت الذي تريد التدرب عليه أولًا.','retry');
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return aiSetStatus('هذا الجهاز لا يدعم التسجيل من المتصفح. جرّب Safari أو Chrome محدثًا.','err');
+ const btn=$('aiPronounceBtn');if(!btn)return;
+ if(aiPronunciationRecorder&&aiPronunciationRecorder.state!=='inactive'){aiPronunciationRecorder.stop();return}
+ try{
+  aiPronunciationStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+  aiPronunciationChunks=[];
+  aiPronunciationRecorder=new MediaRecorder(aiPronunciationStream);
+  aiPronunciationRecorder.ondataavailable=e=>{if(e.data&&e.data.size)aiPronunciationChunks.push(e.data)};
+  aiPronunciationRecorder.onstop=async()=>{
+   clearTimeout(aiPronunciationStopTimer);
+   aiPronunciationStream?.getTracks().forEach(t=>t.stop());
+   btn.classList.remove('recording');btn.disabled=true;btn.textContent='🧠 جاري التقييم...';
+   try{
+    const raw=new Blob(aiPronunciationChunks,{type:aiPronunciationRecorder.mimeType||'audio/webm'});
+    if(raw.size<800)return aiSetStatus('ما سمعت صوتًا واضحًا. جرّب مرة ثانية وتكلم قريبًا من الجهاز.','retry');
+    const wav=await recordingBlobToWav(raw);
+    const result=await sendPronunciationToAI(wav,aiPronunciationTarget);
+    saveAIPronunciationResult(aiPronunciationTarget,result);
+    const heard=result.heard?`<small style="display:block;margin-top:4px">سمعت: ${esc(result.heard)}</small>`:'';
+    if(result.passed){aiSetStatus(`✅ ${esc(result.feedback||'ممتاز! نطقك صحيح.')} <b>${Math.round(result.score||0)}%</b>${heard}`,'ok');confetti()}
+    else aiSetStatus(`🔁 ${esc(result.feedback||'قريب جدًا، استمع ثم جرّب مرة ثانية.')} <b>${Math.round(result.score||0)}%</b>${heard}`,'retry');
+   }catch(e){
+    const m=String(e&&e.message||'');
+    if(m.includes('missing_api_key'))aiSetStatus('ميزة الذكاء الاصطناعي جاهزة، لكن نحتاج إضافة مفتاح OpenAI في إعدادات Netlify أولًا.','err');
+    else if(m.includes('rate_limited'))aiSetStatus('محاولات كثيرة في وقت قصير. جرّب بعد قليل.','retry');
+    else aiSetStatus('تعذر تقييم النطق الآن. تأكد من الإنترنت ثم جرّب مرة ثانية.','err');
+   }finally{btn.disabled=false;btn.textContent='🎤 انطق الآن'}
+  };
+  aiPronunciationRecorder.start();
+  btn.classList.add('recording');btn.textContent='⏹ إيقاف';
+  aiSetStatus(`🔴 أسمعك الآن… قل: <b>${esc(aiPronunciationTarget)}</b>`);
+  aiPronunciationStopTimer=setTimeout(()=>{if(aiPronunciationRecorder&&aiPronunciationRecorder.state!=='inactive')aiPronunciationRecorder.stop()},3200);
+ }catch{
+  aiPronunciationStream?.getTracks().forEach(t=>t.stop());
+  btn.classList.remove('recording');btn.textContent='🎤 انطق الآن';
+  aiSetStatus('اسمح للمتصفح باستخدام الميكروفون ثم جرّب مرة ثانية.','err');
+ }
+}
+function bindAIPronunciation(){
+ document.querySelectorAll('.ai-target').forEach(b=>b.onclick=()=>aiSetTarget(b.dataset.aiTarget));
+ const btn=$('aiPronounceBtn');if(btn)btn.onclick=startAIPronunciation;
+}
+
 
 /* ================= مختبر الحروف (تعلّم حر بدون درجات) ================= */
 let labReturn='startScreen';
 function letterForms(L){const j=L.joins,t='ـ';return[['منفصل','alone',L.l],['أول الكلمة','start',j?L.l+t:L.l],['وسط الكلمة','middle',j?t+L.l+t:t+L.l],['آخر الكلمة','end',t+L.l]]}
-function openLab(from){labReturn=from||(current()?'worldScreen':'startScreen');show('labScreen');const cs=current();$('labContent').innerHTML=`<p class="prompt-ar center">المِسْ أَيَّ حَرْفٍ لِتَتَعَلَّمَهُ.</p>${G('Tap any letter to learn it.')}${cs&&cs.diagnosticDone?`<div class="center-row lab-check"><button class="big-btn gold" id="labCheckBtn"><span class="ab-icon" aria-hidden="true">أب</span> فحص الحروف — أعرف ${knownCount(cs)} من 28</button></div>`:''}<div class="lab-layout"><div class="alphabet-grid" dir="rtl">${ALPHABET.map((L,i)=>`<button class="alpha-btn ${cs&&cs.letterMap?'st-'+letterStatus(cs,L.l):''}" data-i="${i}" aria-label="${esc(L.name)}">${L.l}</button>`).join('')}</div><div class="letter-card" id="letterCard"></div></div>`;if($('labCheckBtn'))$('labCheckBtn').onclick=()=>openLetterCheck();document.querySelectorAll('.alpha-btn').forEach(b=>b.onclick=()=>{showLetter(+b.dataset.i);if(innerWidth<980)$('letterCard').scrollIntoView({behavior:'smooth',block:'start'})});showLetter(1)}
-function showLetter(i){const L=ALPHABET[i];document.querySelectorAll('.alpha-btn').forEach(b=>b.classList.toggle('sel',+b.dataset.i===i));const vowels=L.l==='ا'?[['أَ','a'],['أُ','u'],['إِ','i']]:[[L.l+'َ','fatḥa'],[L.l+'ُ','ḍamma'],[L.l+'ِ','kasra']];const longs=L.l==='ا'?[]:[[L.l+'َا','aa'],[L.l+'ُو','uu'],[L.l+'ِي','ii']];
+function openLab(from){labReturn=from||(current()?'worldScreen':'startScreen');show('labScreen');const cs=current();$('labContent').innerHTML=`<p class="prompt-ar center">المِسْ أَيَّ حَرْفٍ لِتَتَعَلَّمَهُ.</p>${G('Tap any letter to learn it.')}${cs&&cs.diagnosticDone?`<div class="center-row lab-check"><button class="big-btn gold" id="labCheckBtn"><span class="ab-icon" aria-hidden="true">أ ب ت</span> فحص الحروف — أعرف ${knownCount(cs)} من 28</button></div>`:''}<div class="lab-layout"><div class="alphabet-grid" dir="rtl">${ALPHABET.map((L,i)=>`<button class="alpha-btn ${cs&&cs.letterMap?'st-'+letterStatus(cs,L.l):''}" data-i="${i}" aria-label="${esc(L.name)}">${L.l}</button>`).join('')}</div><div class="letter-card" id="letterCard"></div></div>`;if($('labCheckBtn'))$('labCheckBtn').onclick=()=>openLetterCheck();document.querySelectorAll('.alpha-btn').forEach(b=>b.onclick=()=>{showLetter(+b.dataset.i);if(innerWidth<980)$('letterCard').scrollIntoView({behavior:'smooth',block:'start'})});showLetter(1)}
+function showLetter(i){const L=ALPHABET[i];document.querySelectorAll('.alpha-btn').forEach(b=>b.classList.toggle('sel',+b.dataset.i===i));const vowels=L.l==='ا'?[['أَ','a'],['أُ','u'],['إِ','i']]:[[L.l+'َ','fatḥa'],[L.l+'ُ','ḍamma'],[L.l+'ِ','kasra']];const longs=L.l==='ا'?[]:[[L.l+'َا','aa'],[L.l+'ُو','uu'],[L.l+'ِي','ii']];const aiTargets=[L.name,...vowels.map(x=>x[0]),...longs.map(x=>x[0]),L.word].filter((x,p,a)=>x&&a.indexOf(x)===p);aiPronunciationTarget=L.name;
  $('letterCard').innerHTML=`<div class="lc-top"><button class="lc-letter" data-say="${esc(L.name)}">${L.l}</button><div><h2>${esc(L.name)}</h2><span class="tl always" dir="ltr">${esc(L.tr)}</span><button class="control-btn" data-say="${esc(L.name)}">🔊 اسم الحرف</button></div></div>
  <h4>الحركات القصيرة ${G('Short vowels')}</h4><div class="lc-row">${vowels.map(([v,n])=>`<button class="lc-chip" data-say="${esc(v)}"><b>${v}</b><small dir="ltr">${esc(translit(v)||n)}</small></button>`).join('')}</div>${longs.length?`<h4>المدود الطويلة ${G('Long vowels')}</h4><div class="lc-row long-vowels">${longs.map(([v,n])=>`<button class="lc-chip long" data-say="${esc(v)}"><b>${v}</b><small dir="ltr">${esc(translit(v)||n)}</small></button>`).join('')}</div><p class="note long-note">قارِن: <b>${vowels[1][0]}</b> ↔ <b>${longs[1][0]}</b> &nbsp; و &nbsp; <b>${vowels[2][0]}</b> ↔ <b>${longs[2][0]}</b> ${G('Compare the short and long sounds.')}</p>`:''}
+ <div class="ai-pronunciation"><div class="ai-pronunciation-head"><h4>🎤 مدرب النطق الذكي</h4><span class="ai-badge">✦ OpenAI</span></div><p class="note">اختَر صوتًا، استمع إليه، ثم انطقه. سيعطيك المأمون تغذية راجعة مباشرة.</p><div class="ai-targets">${aiTargets.map((t,j)=>`<button class="ai-target ${j===0?'sel':''}" data-ai-target="${esc(t)}">${esc(t)}</button>`).join('')}</div><div class="ai-pronounce-row"><button id="aiPronounceBtn" class="ai-mic-btn">🎤 انطق الآن</button><span class="ai-target-now">سأستمع إلى: <b id="aiTargetNow">${esc(L.name)}</b></span></div><div id="aiPronunciationStatus" class="ai-pronunciation-status">اضغط على «انطق الآن»، وقل الصوت بوضوح.</div><small class="ai-privacy">🔒 لا نرسل اسم الطالب أو رمزه. يُرسل فقط مقطع النطق القصير والصوت المطلوب للتقييم.</small></div>
  <h4>أشكال الحرف ${G('Letter shapes in a word')}</h4><div class="lc-row forms">${letterForms(L).map(([ar,en,f])=>`<div class="lc-form"><b>${f}</b><small>${ar}${G(en)}</small></div>`).join('')}</div>${L.joins?'':`<p class="note">هذا الحرف لا يتصل بالحرف الذي بعده. ${G('This letter never joins to the letter after it.')}</p>`}
  <h4>كلمة ${G('Example word')}</h4><button class="lc-word" data-say="${esc(L.word)}"><span class="pic-big">${L.e}</span><span class="ar-text">${esc(L.word)}</span><span class="tl always" dir="ltr">${esc(translit(L.word))}</span>${G(L.en)}</button><h4>✍️ اكتب الحرف ${G('Write the letter')}</h4><div data-trace></div>`;
- $('letterCard').querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>speak(b.dataset.say,.6));tracePad($('letterCard').querySelector('[data-trace]'),L.l,{practice:true});later(()=>speak(L.name,.7),150)}
+ $('letterCard').querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{const t=b.dataset.say;speak(t,.82);const hit=[...document.querySelectorAll('.ai-target')].find(x=>x.dataset.aiTarget===t);if(hit){aiPronunciationTarget=t;document.querySelectorAll('.ai-target').forEach(x=>x.classList.toggle('sel',x===hit));if($('aiTargetNow'))$('aiTargetNow').textContent=t}});
+ bindAIPronunciation();tracePad($('letterCard').querySelector('[data-trace]'),L.l,{practice:true});later(()=>speak(L.name,.82),150)}
 
 /* ================= الإدارة ================= */
 function adminLogin(){overlay(`<h2>دخول الإدارة</h2><div class="form-field"><label for="au">اسم المستخدم</label><input id="au" autocomplete="off" dir="ltr"></div><div class="form-field"><label for="ap">الرقم السري</label><input id="ap" type="password" autocomplete="off" dir="ltr"></div><div class="form-actions"><button class="big-btn ghost" id="cancelOverlay">إلغاء</button><button class="big-btn primary" id="adminGo">دخول</button></div>`);$('cancelOverlay').onclick=closeOverlay;const go=()=>{const u=$('au').value.trim(),p=$('ap').value.trim();
@@ -1032,7 +1140,7 @@ function restore(e){const f=e.target.files[0];if(!f)return;const r=new FileReade
   catch{flash('الملف غير صالح. اختر ملف النسخة الاحتياطية (.json)')}};r.readAsText(f);e.target.value=''}
 function topErrors(s,n){const all=[];Object.entries(s.errors||{}).forEach(([k,obj])=>Object.entries(obj||{}).forEach(([item,c])=>all.push({skill:SKILL_NAMES[k]||(k.startsWith('diagnostic')?'التشخيص':k),item,c})));return all.sort((a,b)=>b.c-a.c).slice(0,n)}
 function showStudentReport(id){const s=db.students.find(x=>x.id===id);if(!s)return;ensureLearnerShape(s);const before=s.baseline?s.baseline.total:0,now=overall(s),weak=weakestSkill(s);const errs=topErrors(s,6);const errorTotal=Object.values(s.errors).reduce((sum,o)=>sum+Object.values(o||{}).reduce((a,b)=>a+(+b||0),0),0);
- overlay(`<div class="report"><h2>تقرير الطالب: ${esc(s.name)}</h2><div class="report-summary"><span>البداية <b>${before}%</b></span><span>الحالي <b>${now}%</b></span><span>التحسن <b>+${Math.max(0,now-before)}</b></span><span>المستوى <b dir="ltr">${esc(s.cefr)}</b></span><span>المهام <b>${MISSIONS.reduce((a,_,i)=>a+doneCount(s,i),0)}/${MISSION_TOTAL}</b></span><span>أيام النشاط <b>${activeDays(s)}</b></span><span>لغة المساعدة <b>${s.support==='en'?'English':'عربي فقط'}</b></span><span>الرقم السري <b>${pinIsDefault(s)?'1234 (مبدئي)':'غيّره الطالب ✅'}</b></span></div>${s.baseline?`<p class="muted">التشخيص: الحروف ${s.baseline.domains.letters}% — الكلمات ${s.baseline.domains.words}% — الجمل ${s.baseline.domains.sentences}%</p>`:''}<div class="skill-grid">${skillCards(s)}</div><div class="support-box"><h3>أولوية الدعم</h3><p><b>${esc(weak[1])} (${weak[2]}%)</b></p><p>${esc(supportRecommendation(s))}</p><p>مرات التدريب العلاجي: <b>${supportCount(s)}</b> — الأخطاء المسجلة: <b>${errorTotal}</b></p><h4>خريطة الحروف الـ28 — المعروف ${knownCount(s)}/28 ${s.letterCheck?(s.completed[0]||knownCount(s)>=LC_TARGET?'(اجتاز الفحص ✅)':'(الفحص مطلوب قبل المحطة الأولى — يحتاج '+LC_TARGET+')'):'(الفحص اختياري)'}</h4><p class="muted">اضغطي على أي حرف لتأكيد أن الطالب يعرفه (يظهر بإطار ذهبي)، واضغطي مرة أخرى للإلغاء.</p>${letterGrid(s,{clickable:true})}${errs.length?`<h4>أكثر ما يخطئ فيه</h4><ul class="error-list">${errs.map(e=>`<li><span>${esc(e.item)}</span><small>${esc(e.skill)}</small><b>×${e.c}</b></li>`).join('')}</ul>`:''}</div><div class="form-actions"><button class="big-btn ghost" id="rPin">🔑 إعادة الرقم السري إلى 1234</button><button class="big-btn ghost" id="rCard">🖨️ بطاقة الدخول</button><button class="big-btn ghost" id="rCheck"><span class="ab-icon" aria-hidden="true">أب</span> ${s.letterCheck?'إلغاء إلزام فحص الحروف':'إلزام فحص الحروف'}</button><button class="big-btn ghost" id="rDiag">🎯 إعادة التشخيص</button><button class="big-btn ghost danger" id="rDel">🗑 حذف</button><button class="big-btn primary" id="reportClose">إغلاق</button></div></div>`);
+ overlay(`<div class="report"><h2>تقرير الطالب: ${esc(s.name)}</h2><div class="report-summary"><span>البداية <b>${before}%</b></span><span>الحالي <b>${now}%</b></span><span>التحسن <b>+${Math.max(0,now-before)}</b></span><span>المستوى <b dir="ltr">${esc(s.cefr)}</b></span><span>المهام <b>${MISSIONS.reduce((a,_,i)=>a+doneCount(s,i),0)}/${MISSION_TOTAL}</b></span><span>أيام النشاط <b>${activeDays(s)}</b></span><span>لغة المساعدة <b>${s.support==='en'?'English':'عربي فقط'}</b></span><span>الرقم السري <b>${pinIsDefault(s)?'1234 (مبدئي)':'غيّره الطالب ✅'}</b></span></div>${s.baseline?`<p class="muted">التشخيص: الحروف ${s.baseline.domains.letters}% — الكلمات ${s.baseline.domains.words}% — الجمل ${s.baseline.domains.sentences}%</p>`:''}<div class="skill-grid">${skillCards(s)}</div><div class="support-box"><h3>أولوية الدعم</h3><p><b>${esc(weak[1])} (${weak[2]}%)</b></p><p>${esc(supportRecommendation(s))}</p><p>مرات التدريب العلاجي: <b>${supportCount(s)}</b> — الأخطاء المسجلة: <b>${errorTotal}</b></p><h4>خريطة الحروف الـ28 — المعروف ${knownCount(s)}/28 ${s.letterCheck?(s.completed[0]||knownCount(s)>=LC_TARGET?'(اجتاز الفحص ✅)':'(الفحص مطلوب قبل المحطة الأولى — يحتاج '+LC_TARGET+')'):'(الفحص اختياري)'}</h4><p class="muted">اضغطي على أي حرف لتأكيد أن الطالب يعرفه (يظهر بإطار ذهبي)، واضغطي مرة أخرى للإلغاء.</p>${letterGrid(s,{clickable:true})}${errs.length?`<h4>أكثر ما يخطئ فيه</h4><ul class="error-list">${errs.map(e=>`<li><span>${esc(e.item)}</span><small>${esc(e.skill)}</small><b>×${e.c}</b></li>`).join('')}</ul>`:''}</div><div class="form-actions"><button class="big-btn ghost" id="rPin">🔑 إعادة الرقم السري إلى 1234</button><button class="big-btn ghost" id="rCard">🖨️ بطاقة الدخول</button><button class="big-btn ghost" id="rCheck"><span class="ab-icon" aria-hidden="true">أ ب ت</span> ${s.letterCheck?'إلغاء إلزام فحص الحروف':'إلزام فحص الحروف'}</button><button class="big-btn ghost" id="rDiag">🎯 إعادة التشخيص</button><button class="big-btn ghost danger" id="rDel">🗑 حذف</button><button class="big-btn primary" id="reportClose">إغلاق</button></div></div>`);
  $('reportClose').onclick=closeOverlay;$('rCard').onclick=()=>printLoginCards([s]);
  document.querySelectorAll('#overlayCard .lc-cell[data-l]').forEach(c=>c.onclick=()=>{s.letterMap=s.letterMap||{};const l=c.dataset.l;const m=s.letterMap[l]||{d:[],n:0};m.t=!m.t;s.letterMap[l]=m;persist();showStudentReport(id)});
  $('rCheck').onclick=()=>{s.letterCheck=!s.letterCheck;persist();flash(s.letterCheck?'أصبح فحص الحروف مطلوبًا قبل المحطة الأولى':'أُلغي إلزام فحص الحروف');showStudentReport(id)};

@@ -23,7 +23,7 @@ export default async(request)=>{
   if(!sdp||sdp.length>60000)return reply(JSON.stringify({error:'invalid_sdp'}),400,{'content-type':'application/json'});
   const session={
    type:'realtime',
-   model:'gpt-realtime',
+   model:'gpt-realtime-1.5',
    instructions:INSTRUCTIONS,
    output_modalities:['audio'],
    max_output_tokens:180,
