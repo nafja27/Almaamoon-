@@ -247,7 +247,7 @@ function prepareWorld(){const s=current();if(!s)return show('startScreen');refre
  document.querySelectorAll('.game-nav button').forEach(b=>{b.classList.toggle('active',b.dataset.tab==='world');b.onclick=()=>navTab(b.dataset.tab)});
  $('profileChip').onclick=showProfile;$('worldSoundBtn').textContent=settings.sound?'🔊':'🔇';$('worldSoundBtn').onclick=()=>{settings.sound=!settings.sound;persist();$('worldSoundBtn').textContent=settings.sound?'🔊':'🔇';beep(true)}}
 function selectStage(i,move){const s=current();if(!stageUnlocked(s,i))return;selectedStage=i;const st=STAGES[i];$('missionZone').innerHTML=esc(st.zone)+G(st.zoneEn);$('missionPlace').textContent=st.place;$('missionSkill').innerHTML=esc(st.skill)+G(st.skillEn);$('missionDesc').innerHTML=esc(st.desc)+G(st.descEn);$('missionCanDo').innerHTML='🎯 '+esc(st.canDo)+G(st.canDoEn);$('missionReward').innerHTML=`${st.reward} ${esc(st.rewardName)}${s.stars[i]?` <span class="mission-stars">${starText(s.stars[i])}</span>`:''}`;renderMissionList(i);if(i===0&&needsLetterCheck(s)){$('missionCanDo').innerHTML+=`<div class="lc-mini"><span class="ab-icon" aria-hidden="true">أ ب ت</span> فحص الحروف أولًا: تعرف <b>${knownCount(s)}</b> من 28 — تحتاج ${LC_TARGET} ${G('Letter check first')}</div>`}if(move){moveExplorer(i);sparkAtNode(i);if(i!==8)speak(st.skill,.85)}}
-function moveExplorer(i){const n=document.querySelector(`.station-node[data-stage="${i}"]`),ex=$('explorer');ex.style.left=n.style.getPropertyValue('--x');ex.style.top=n.style.getPropertyValue('--y')}
+function moveExplorer(i){const n=document.querySelector(`.station-node[data-stage="${i}"]`),ex=$('mamounTokenWrap')||$('explorer');if(!n||!ex)return;ex.style.left=n.style.getPropertyValue('--x');ex.style.top=n.style.getPropertyValue('--y')}
 function sparkAtNode(i){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const n=document.querySelector(`.station-node[data-stage="${i}"]`),box=$('sparkles');for(let k=0;k<10;k++){const s=document.createElement('span');s.className='spark';s.textContent=k%2?'✨':'⭐';s.style.left=`calc(${n.style.getPropertyValue('--x')} + ${(Math.random()*50-25)}px)`;s.style.top=`calc(${n.style.getPropertyValue('--y')} + ${(Math.random()*40-20)}px)`;box.appendChild(s);setTimeout(()=>s.remove(),1000)}}
 function launchStage(i,mi,force){const s=current();if(i===0&&needsLetterCheck(s))return openLetterCheck();
  if(mi==null&&!force){mi=nextMi(s,i);if(mi<0)mi=Math.floor(Math.random()*MISSIONS[i].length);const a=missionAccess(s,i,mi);
@@ -874,45 +874,82 @@ function actReview(ctx){const m=curMission();let items;
   items=shuffle([...hearWordItems(t,ctx.remedial?2:5,ctx),...pics])}
  const [ti,te]=mTitle();runMCQ(m.k,items,ctx,ti,te)}
 
-/* ================= نقاط المهام على طريق الخريطة =================
-   مهام كل محطة تظهر نقاطًا على الطريق بينها وبين المحطة التالية،
-   فيرى الطالب كم بقي له ليصل، ويمشي المستكشف عليها كلما أتقن مهمة. */
+/* ================= نقاط المهام على خريطة اللعب V36.14 =================
+   كل محطة لها mini-board خاص بها مثل ألعاب الـparty.
+   نقاط المهمة تحيط بالمعلم نفسه، والمأمون يقف على المهمة الحالية. */
 function nodePos(i){const n=document.querySelector(`.station-node[data-stage="${i}"]`);return n?{x:parseFloat(n.style.getPropertyValue('--x')),y:parseFloat(n.style.getPropertyValue('--y'))}:null}
-/* نختار مواقع النقاط على الطريق في أماكن خالية من أسماء المحطات واللوحات */
-let dotCache=null;
-function freeFractions(i,n){const world=$('mapBox');const a=nodePos(i),b=nodePos(i+1)||a;if(!world)return null;const W=world.getBoundingClientRect();
- const blocks=[...world.querySelectorAll('.station-node,.station-node span')].map(el=>{const r=el.getBoundingClientRect();return{l:r.left-W.left-8,r:r.right-W.left+8,t:r.top-W.top-8,b:r.bottom-W.top+8}});
- const free=[];for(let f=.08;f<=.92;f+=.01){const x=(a.x+(b.x-a.x)*f)/100*W.width,y=(a.y+(b.y-a.y)*f)/100*W.height;if(!blocks.some(k=>x>k.l&&x<k.r&&y>k.t&&y<k.b))free.push(f)}
- if(free.length<n)return null;
- /* نوزع النقاط بالتساوي على المواقع الخالية */return[...Array(n)].map((_,k)=>free[Math.round((k+.5)*free.length/n-.5)])}
-function dotPos(i,k,n){const a=nodePos(i),b=nodePos(i+1)||a;dotCache=dotCache||{};const key=i+':'+n;if(!(key in dotCache))dotCache[key]=freeFractions(i,n);const fr=dotCache[key];const f=fr?fr[k]:.24+.52*(k+.5)/n;return{x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f}}
-/* الخريطة تحافظ على أبعاد الصورة الأصلية، فتبقى أسماء المحطات فوق معالمها تمامًا */
-const MAP_AR=1536/928;
-function fitMap(){const world=document.querySelector('.world'),box=$('mapBox');if(!world||!box)return;const panel=$('missionPanel');const mobile=innerWidth<=760;
- const W=world.clientWidth,H=world.clientHeight;const pw=mobile?0:((panel&&panel.offsetWidth)||0)+28;const ph=mobile?178:0;
- const aw=Math.max(200,W-pw-16),ah=Math.max(160,H-ph-16);let w=Math.min(aw,ah*MAP_AR),h=w/MAP_AR;
- box.style.width=w+'px';box.style.height=h+'px';box.style.left=(8+(aw-w)/2)+'px';box.style.top=(8+(ah-h)/2)+'px';box.style.setProperty('--mw',w+'px')}
-function drawPathDots(){const s=current();const world=$('mapBox');if(!s||!world)return;dotCache=null;fitMap();world.querySelectorAll('.path-dot').forEach(d=>d.remove());
- const trail=[];let here=null;
- for(let i=0;i<8;i++){const ms=MISSIONS[i],unl=stageUnlocked(s,i);const a=nodePos(i);if(!a)continue;
-  if(unl){trail.push(a);if(!s.completed[i])here=here||a}
-  ms.forEach((m,k)=>{const p=dotPos(i,k,ms.length);const done=mDone(s,i,k);const acc=unl?missionAccess(s,i,k):{ok:false,icon:'🔒'};
+function clampMap(v,min=4,max=96){return Math.max(min,Math.min(max,v))}
+function dotPos(i,k,n){
+ const a=nodePos(i);if(!a)return{x:50,y:50};
+ const patterns={
+  1:[[0,6.4]],
+  2:[[-3.4,6.1],[3.4,6.1]],
+  3:[[-4.8,5.6],[0,7.4],[4.8,5.6]],
+  4:[[-5.8,5.0],[-2.0,7.2],[2.0,7.2],[5.8,5.0]]
+ };
+ const P=patterns[n]||[...Array(n)].map((_,q)=>[(q-(n-1)/2)*2.8,6.2+Math.abs(q-(n-1)/2)*.55]);
+ let [dx,dy]=P[k]||[0,6.4];
+ if(a.y>75)dy=-Math.abs(dy);
+ if(a.x<22)dx+=2.2;
+ if(a.x>78)dx-=2.2;
+ return{x:clampMap(a.x+dx),y:clampMap(a.y+dy,5,94)}
+}
+function setExplorerPoint(p){
+ const ex=$('mamounTokenWrap')||$('explorer');if(!ex||!p)return;
+ ex.style.left=p.x+'%';ex.style.top=p.y+'%';
+}
+function drawPathDots(){
+ const s=current(),world=$('mapBox');if(!s||!world)return;fitMap();
+ world.querySelectorAll('.path-dot').forEach(d=>d.remove());
+
+ let currentPoint=null;
+ for(let i=0;i<8;i++){
+  const ms=MISSIONS[i],unl=stageUnlocked(s,i);
+  ms.forEach((m,k)=>{
+   const p=dotPos(i,k,ms.length),done=mDone(s,i,k),acc=unl?missionAccess(s,i,k):{ok:false,icon:'🔒',why:'مقفلة'};
    const st=done?'done':!unl?'locked':acc.ok?'next':acc.tomorrow?'tomorrow':'locked';
-   const d=document.createElement('button');d.className='path-dot '+st+(m.gate?' gate':'');d.style.left=p.x+'%';d.style.top=p.y+'%';
-   d.innerHTML=`<span>${done?'★':m.gate?'🚪':st==='tomorrow'?'🌙':st==='next'?k+1:''}</span>`;d.title=m.n+' — '+m.en;d.setAttribute('aria-label',`${STAGES[i].place}: ${m.n} (${done?'مكتملة':acc.ok?'متاحة':acc.why||'مقفلة'})`);
-   d.onclick=e=>{e.stopPropagation();if(!unl)return flash('المحطة مقفلة — Station locked');
-    /* اللمسة الأولى تختار المحطة، والثانية تبدأ المهمة */
-    if(selectedStage!==i||!d.classList.contains('armed')){world.querySelectorAll('.path-dot.armed').forEach(x=>x.classList.remove('armed'));selectStage(i,false);d.classList.add('armed');const it=document.querySelector(`#missionList .ml-item[data-mi="${k}"]`);if(it){it.classList.add('flash');setTimeout(()=>it.classList.remove('flash'),900);it.scrollIntoView({block:'nearest'})}speak(m.n,.9);return}
-    if(acc.check)return openLetterCheck();if(!acc.ok)return acc.tomorrow?startPractice(i,acc):flash(acc.why);launchStage(i,k)};
+   const d=document.createElement('button');
+   d.className='path-dot stage-checkpoint '+st+(m.gate?' gate':'');
+   d.dataset.stage=String(i);d.dataset.mission=String(k);d.dataset.step=String(k+1);d.dataset.total=String(ms.length);
+   d.style.left=p.x+'%';d.style.top=p.y+'%';
+   d.innerHTML=`<span>${done?'★':m.gate?'🚪':st==='tomorrow'?'🌙':st==='next'?k+1:'🔒'}</span>`;
+   d.title=m.n+' — '+m.en;
+   d.setAttribute('aria-label',`${STAGES[i].place}: المهمة ${k+1} من ${ms.length} — ${m.n} (${done?'مكتملة':acc.ok?'متاحة':acc.why||'مقفلة'})`);
+   if(!done&&unl&&!currentPoint&&(acc.ok||acc.tomorrow)){currentPoint=p;d.classList.add('current-checkpoint')}
+   d.onclick=e=>{
+    e.stopPropagation();
+    if(!unl)return flash('المحطة مقفلة — Station locked');
+    if(selectedStage!==i||!d.classList.contains('armed')){
+      world.querySelectorAll('.path-dot.armed').forEach(x=>x.classList.remove('armed'));
+      selectStage(i,false);d.classList.add('armed');
+      const it=document.querySelector(`#missionList .ml-item[data-mi="${k}"]`);
+      if(it){it.classList.add('flash');setTimeout(()=>it.classList.remove('flash'),900);it.scrollIntoView({block:'nearest'})}
+      setExplorerPoint(p);speak(m.n,.9);return
+    }
+    if(acc.check)return openLetterCheck();
+    if(!acc.ok)return acc.tomorrow?startPractice(i,acc):flash(acc.why);
+    launchStage(i,k)
+   };
    world.appendChild(d);
-   if(unl&&done&&(i<s.stage||!s.completed[i]))trail.push(p);if(!s.completed[i]&&done)here=p});
+  });
  }
- if(stageUnlocked(s,8))trail.push(nodePos(8));
- /* الجزء الذي قطعه الطالب من الطريق يظهر ذهبيًا */
- const svg=document.querySelector('.learning-route');if(svg){let done=svg.querySelector('#learningRouteDone');if(!done){done=document.createElementNS('http://www.w3.org/2000/svg','polyline');done.id='learningRouteDone';svg.appendChild(done)}
-  const upto=[];for(const p of trail){upto.push(p);if(here&&p===here)break}done.setAttribute('points',upto.filter(Boolean).map(p=>`${p.x},${p.y}`).join(' '))}
- /* المستكشف يقف عند آخر مهمة أتقنها */
- const ex=$('explorer');const pos=here||nodePos(Math.min(s.stage,8));if(ex&&pos){ex.style.left=pos.x+'%';ex.style.top=pos.y+'%'}}
+
+ const svg=document.querySelector('.learning-route');
+ if(svg){
+  const route=[...Array(9)].map((_,i)=>nodePos(i)).filter(Boolean);
+  const line=$('learningRouteLine');if(line)line.setAttribute('points',route.map(p=>`${p.x},${p.y}`).join(' '));
+  let done=svg.querySelector('#learningRouteDone');
+  if(!done){done=document.createElementNS('http://www.w3.org/2000/svg','polyline');done.id='learningRouteDone';svg.appendChild(done)}
+  const upto=route.slice(0,Math.min(route.length,Math.max(1,(Number(s.stage)||0)+1)));
+  done.setAttribute('points',upto.map(p=>`${p.x},${p.y}`).join(' '))
+ }
+
+ if(!currentPoint){
+  const si=Math.min(Number(s.stage)||0,8);
+  currentPoint=nodePos(si);
+ }
+ if(currentPoint)setExplorerPoint(currentPoint);
+}
 
 /* إعادة رسم النقاط عند تغيير حجم الشاشة أو تدويرها */
 let dotResizeT=null;window.addEventListener('resize',()=>{clearTimeout(dotResizeT);dotResizeT=setTimeout(()=>{if($('worldScreen').classList.contains('active')){fitMap();drawPathDots()}},200)});
