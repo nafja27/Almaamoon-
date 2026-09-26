@@ -44,11 +44,35 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
 
 .evidence-strip{display:flex;flex-wrap:wrap;gap:8px;margin:-10px 0 20px}.evidence-strip span{font-size:14px;font-weight:900;color:#47637b;background:rgba(255,255,255,.86);border:1px solid rgba(18,61,103,.08);padding:8px 11px;border-radius:999px}
 @media(max-width:700px){.evidence-strip{justify-content:center}.evidence-strip span{font-size:12px}}
+
+/* ===== V36.6: OpenAI pronunciation coach ===== */
+.ai-pronunciation{margin:22px 0 6px;padding:18px;border:1px solid rgba(25,167,216,.22);border-radius:22px;background:linear-gradient(180deg,#f3fbff,#fff);box-shadow:0 12px 30px rgba(18,61,103,.08)}
+.ai-pronunciation-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.ai-pronunciation-head h4{margin:0!important;color:#123d67;font-size:20px}
+.ai-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:#e5f8ee;color:#157a45;font-weight:900;font-size:12px}
+.ai-targets{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.ai-target{border:1px solid rgba(18,61,103,.13);background:#fff;color:#123d67;border-radius:14px;padding:9px 13px;font-size:19px;font-weight:900;cursor:pointer}
+.ai-target.sel{border-color:#19a7d8;background:#e9f8fe;box-shadow:0 0 0 3px rgba(25,167,216,.09)}
+.ai-pronounce-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ai-mic-btn{border:0;border-radius:18px;padding:14px 20px;font-size:19px;font-weight:900;background:linear-gradient(180deg,#20b95e,#159849);color:#fff;box-shadow:0 10px 24px rgba(21,152,73,.2);cursor:pointer}
+.ai-mic-btn.recording{background:linear-gradient(180deg,#ef5350,#d93025);animation:aiPulse 1s infinite}
+.ai-mic-btn:disabled{opacity:.58;cursor:wait}
+.ai-target-now{font-size:17px;color:#47637b;font-weight:800}
+.ai-target-now b{font-size:23px;color:#123d67}
+.ai-pronunciation-status{margin-top:12px;min-height:50px;padding:12px 14px;border-radius:14px;background:#fff;border:1px dashed rgba(18,61,103,.15);color:#47637b;font-weight:800;line-height:1.7}
+.ai-pronunciation-status.ok{background:#ecfbf2;border-color:#8ed6aa;color:#17663a}
+.ai-pronunciation-status.retry{background:#fff8e8;border-color:#e7c46b;color:#7a5900}
+.ai-pronunciation-status.err{background:#fff0f0;border-color:#e6a3a3;color:#8d2b2b}
+.ai-privacy{display:block;margin-top:8px;color:#6a7e90;font-size:11px;line-height:1.5}
+@keyframes aiPulse{50%{transform:scale(1.025);box-shadow:0 0 0 8px rgba(239,83,80,.12)}}
+@media(max-width:700px){.ai-pronunciation{padding:14px}.ai-mic-btn{width:100%}.ai-target-now{width:100%;text-align:center}}
+
 </style>
 <link rel="stylesheet" href="assets/v30.css?v=365">
 <link rel="stylesheet" href="assets/v36.css?v=365">
 <link rel="stylesheet" href="assets/v36_5.css?v=365">
 
+<link rel="stylesheet" href="assets/mamoun-buddy.css?v=367">
 </head>
 <body>
 <div id="app" class="app">
@@ -105,7 +129,7 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
           </div>
         </div>
         <div id="resumeBox" class="resume-box hidden"></div>
-        <div id="voiceBanner" class="voice-banner hidden">🔈 لا يوجد صوت عربي في هذا المتصفح. للحصول على أفضل نطق استخدم <b>Google Chrome</b> أو <b>Microsoft Edge</b>، أو سجّل صوت المعلمة من استوديو الصوت.</div>
+        <div id="voiceBanner" class="voice-banner hidden">🔊 تستخدم أنشطة الاستماع صوتًا عربيًا مولّدًا بالذكاء الاصطناعي لتحسين وضوح النطق. عند تعذر الاتصال، يستخدم الموقع صوت الجهاز كخيار احتياطي.</div>
       </article>
 
       <article class="v36-map-card">
@@ -115,7 +139,7 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
       </article>
     </main>
 
-    <footer class="v36-credit"><span>إعداد القائم بأعمال مدير مساعد: <b>أ. نافجة الحامد</b></span><i>✦</i><span>مديرة المدرسة: <b>أ. عايدة الدوسري</b></span><em dir="ltr">V36.5</em></footer>
+    <footer class="v36-credit"><span>إعداد القائم بأعمال مدير مساعد: <b>أ. نافجة الحامد</b></span><i>✦</i><span>مديرة المدرسة: <b>أ. عايدة الدوسري</b></span><em dir="ltr">V36.9</em></footer>
   </section>
   <section id="diagnosticScreen" class="screen diagnostic-screen">
     <div class="top-hud simple">
@@ -190,6 +214,7 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
 </div>
 <script src="assets/config.js?v=365"></script>
 <script src="assets/content.js?v=365"></script>
-<script src="assets/game.js?v=365"></script>
+<script src="assets/game.js?v=368"></script>
+<script src="assets/mamoun-buddy.js?v=367"></script>
 </body>
 </html>
