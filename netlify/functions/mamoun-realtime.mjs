@@ -21,29 +21,46 @@ export default async(request)=>{
  try{
   const sdp=await request.text();
   if(!sdp||sdp.length>60000)return reply(JSON.stringify({error:'invalid_sdp'}),400,{'content-type':'application/json'});
+
   const session={
    type:'realtime',
-   model:'gpt-realtime-1.5',
+   model:'gpt-realtime-2.1',
    instructions:INSTRUCTIONS,
-   output_modalities:['audio'],
-   max_output_tokens:180,
-   audio:{
-    input:{
-     noise_reduction:{type:'near_field'},
-     transcription:{model:'gpt-4o-mini-transcribe',language:'ar',prompt:'العربية الفصحى المبسطة، حروف وحركات ومدود وكلمات تعليمية للأطفال.'},
-     turn_detection:{type:'semantic_vad',eagerness:'medium',create_response:true}
-    },
-    output:{voice:'marin'}
-   }
+   audio:{output:{voice:'marin'}}
   };
+
   const fd=new FormData();
-  fd.append('sdp',new Blob([sdp],{type:'application/sdp'}),'offer.sdp');
-  fd.append('session',new Blob([JSON.stringify(session)],{type:'application/json'}),'session.json');
-  const r=await fetch('https://api.openai.com/v1/realtime/calls',{method:'POST',headers:{authorization:`Bearer ${key}`},body:fd});
-  const body=await r.text();
-  if(!r.ok){console.error('OpenAI Realtime:',r.status,body.slice(0,800));return reply(JSON.stringify({error:r.status===429?'rate_limited':'openai_realtime_error'}),r.status===429?429:502,{'content-type':'application/json'})}
-  return reply(body,201,{'content-type':'application/sdp'});
- }catch(e){console.error('mamoun-realtime failed',e?.message||e);return reply(JSON.stringify({error:'server_error'}),500,{'content-type':'application/json'})}
+  fd.set('sdp',sdp);
+  fd.set('session',JSON.stringify(session));
+
+  const apiResponse=await fetch('https://api.openai.com/v1/realtime/calls',{
+   method:'POST',
+   headers:{authorization:`Bearer ${key}`},
+   body:fd
+  });
+
+  const body=await apiResponse.text();
+  if(!apiResponse.ok){
+   let detail='',code='';
+   try{
+    const parsed=JSON.parse(body);
+    detail=String(parsed?.error?.message||'').slice(0,260);
+    code=String(parsed?.error?.code||parsed?.error?.type||'').slice(0,80);
+   }catch{}
+   console.error('OpenAI Realtime:',apiResponse.status,code,detail||body.slice(0,500));
+   return reply(JSON.stringify({
+    error:apiResponse.status===429?'rate_limited':apiResponse.status===401?'auth_error':apiResponse.status===403?'permission_error':'openai_realtime_error',
+    status:apiResponse.status,
+    code,
+    detail
+   }),502,{'content-type':'application/json'});
+  }
+
+  return reply(body,200,{'content-type':'application/sdp'});
+ }catch(e){
+  console.error('mamoun-realtime failed',e?.message||e);
+  return reply(JSON.stringify({error:'server_error',detail:String(e?.message||'').slice(0,220)}),500,{'content-type':'application/json'});
+ }
 };
 
 export const config={
