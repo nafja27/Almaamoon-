@@ -32,10 +32,10 @@ export default async(request)=>{
   else instructions+=' استخدم سرعة تعليمية هادئة وطبيعية.';
   const isPhoneme=SHORT.test(text)||LONG_A.test(text)||LONG_U.test(text)||LONG_I.test(text);
   const speed=isPhoneme?1.0:(slow?0.88:0.98);
-  const r=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini-tts-2025-12-15',voice:'marin',input:text,instructions,response_format:'wav',speed})});
+  const r=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini-tts-2025-12-15',voice:'marin',input:text,instructions,response_format:'mp3',speed})});
   if(!r.ok){const err=await r.text();console.error('mamoun-tts OpenAI error',r.status,err.slice(0,500));return json({error:r.status===429?'rate_limited':'openai_tts_error'},r.status===429?429:502)}
   const audio=await r.arrayBuffer();
-  return new Response(audio,{status:200,headers:{'content-type':'audio/wav','cache-control':'private, max-age=0, no-store','x-content-type-options':'nosniff','x-maamoon-voice':'openai-marin'}})
+  return new Response(audio,{status:200,headers:{'content-type':'audio/mpeg','cache-control':'public, max-age=604800, immutable','x-content-type-options':'nosniff','x-maamoon-voice':'openai-marin'}})
  }catch(e){console.error('mamoun-tts failed',e?.message||e);return json({error:'server_error'},500)}
 };
 
