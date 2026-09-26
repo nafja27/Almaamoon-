@@ -30,12 +30,12 @@ function contextText(){
 }
 function baseInstruction(){return `أنت شخصية "المأمون"، رفيق تعليمي لطفل يتعلم العربية كلغة ثانية داخل منصة مغامرة المأمون. تحدث بالعربية الفصحى المبسطة فقط. لا تستخدم أي لهجة عامية مطلقًا. قل "أهلًا يا بطل" ولا تقل "هلا". استخدم جملًا قصيرة وواضحة ومشجعة، غالبًا جملة أو جملتين فقط. لا تسأل الطفل عن اسمه أو عمره أو مدرسته أو موقعه أو أي معلومة شخصية. لا تناقش موضوعات خارج تعلم العربية؛ أعد الحوار بلطف إلى الحروف والكلمات والجمل والقراءة. افهم الإنجليزية إذا احتاج الطفل إليها، لكن اجعل ردك الأساسي بالعربية، ويمكنك إعطاء كلمة إنجليزية قصيرة جدًا عند الضرورة. عند الخطأ قل مثلًا: "أحسنت المحاولة. استمع مرة أخرى ثم حاول." عند النجاح قل مثلًا: "أحسنت! نطقك واضح." استخدم نبرة دافئة ومرحة وبطيئة نسبيًا تناسب طفلًا في المرحلة الابتدائية. السياق الحالي في المنصة: ${contextText()}`}
 
-const launcher=el('button','mamoun-buddy-launcher','<span class="mb-badge" id="mbAiBadge">AI</span><span class="mb-label" id="mbLauncherLabel">تحدّث مع المأمون AI</span><img src="assets/mamoun-buddy.png?v=3610" onerror="this.onerror=null;this.src=&quot;assets/mascot.webp?v=365&quot;" alt="المأمون">');
+const launcher=el('button','mamoun-buddy-launcher','<span class="mb-badge" id="mbAiBadge">AI</span><span class="mb-label" id="mbLauncherLabel">تحدّث مع المأمون AI</span><img src="assets/mascot.webp?v=365" alt="المأمون">');
 launcher.type='button';launcher.setAttribute('aria-label','تحدّث مع المأمون');
 const backdrop=el('div','mamoun-buddy-backdrop');
 backdrop.innerHTML=`<section class="mamoun-buddy-panel" role="dialog" aria-modal="true" aria-label="التحدث مع المأمون">
  <div class="mb-scene">
-   <div class="mb-avatar-wrap"><div class="mb-avatar" id="mbAvatar"><img src="assets/mamoun-buddy.png?v=3610" onerror="this.onerror=null;this.src=&quot;assets/mascot.webp?v=365&quot;" alt="شخصية المأمون"><span class="mb-mouth"></span></div><span class="mb-listen-ring"></span></div>
+   <div class="mb-avatar-wrap"><div class="mb-avatar" id="mbAvatar"><img id="mbBuddyImage" src="assets/mascot.webp?v=365" data-full-src="assets/mamoun-buddy.png?v=3610" alt="شخصية المأمون"><span class="mb-mouth"></span></div><span class="mb-listen-ring"></span></div>
    <div class="mb-scene-status" id="mbSceneStatus"><i></i><span>المأمون جاهز للتحدث معك</span></div>
  </div>
  <div class="mb-console">
@@ -112,7 +112,7 @@ async function connect(){
 function cleanup(){clearTimeout(sessionTimer);sessionTimer=null;try{dc?.close()}catch{};try{pc?.close()}catch{};try{stream?.getTracks().forEach(t=>t.stop())}catch{};pc=dc=stream=null;connected=false;muted=false;setAvatar('')}
 function disconnect(showMsg=true){cleanup();start.disabled=false;start.classList.remove('connecting','stop');start.innerHTML='🎙️ <span>ابدأ الحديث</span>';mute.disabled=true;contextBtn.disabled=true;mute.textContent='🔇 كتم الميكروفون';setStatus('المأمون جاهز للتحدث معك');if(showMsg)addMsg('system','تم إنهاء الحديث.')}
 function toggleMute(){if(!stream)return;muted=!muted;stream.getAudioTracks().forEach(t=>t.enabled=!muted);mute.textContent=muted?'🎙️ تشغيل الميكروفون':'🔇 كتم الميكروفون';setStatus(muted?'الميكروفون مكتوم':'تحدّث الآن، أنا أستمع إليك',muted?'':'live')}
-function open(){backdrop.classList.add('open');document.body.style.overflow='hidden'}
+function open(){backdrop.classList.add('open');document.body.style.overflow='hidden';const img=document.getElementById('mbBuddyImage');if(img&&img.dataset.fullSrc&&img.src.indexOf('mamoun-buddy.png')<0){const full=new Image();full.onload=()=>{img.src=img.dataset.fullSrc};full.src=img.dataset.fullSrc}}
 function close(){backdrop.classList.remove('open');document.body.style.overflow='';if(connected)disconnect(false)}
 launcher.onclick=open;$('mbClose').onclick=close;backdrop.addEventListener('click',e=>{if(e.target===backdrop)close()});start.onclick=connect;mute.onclick=toggleMute;contextBtn.onclick=askContext;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&backdrop.classList.contains('open'))close()});
