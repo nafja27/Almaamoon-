@@ -114,7 +114,7 @@ function disconnect(showMsg=true){cleanup();start.disabled=false;start.classList
 function toggleMute(){if(!stream)return;muted=!muted;stream.getAudioTracks().forEach(t=>t.enabled=!muted);mute.textContent=muted?'🎙️ تشغيل الميكروفون':'🔇 كتم الميكروفون';setStatus(muted?'الميكروفون مكتوم':'تحدّث الآن، أنا أستمع إليك',muted?'':'live')}
 function open(){backdrop.classList.add('open');document.body.style.overflow='hidden';const img=document.getElementById('mbBuddyImage');if(img&&img.dataset.fullSrc&&img.src.indexOf('mamoun-buddy.png')<0){const full=new Image();full.onload=()=>{img.src=img.dataset.fullSrc};full.src=img.dataset.fullSrc}}
 function close(){backdrop.classList.remove('open');document.body.style.overflow='';if(connected)disconnect(false)}
-launcher.onclick=open;$('mbClose').onclick=close;backdrop.addEventListener('click',e=>{if(e.target===backdrop)close()});start.onclick=connect;mute.onclick=toggleMute;contextBtn.onclick=askContext;
+launcher.onclick=open;const heroAiBtn=document.getElementById('heroAiBtn');if(heroAiBtn)heroAiBtn.onclick=open;$('mbClose').onclick=close;backdrop.addEventListener('click',e=>{if(e.target===backdrop)close()});start.onclick=connect;mute.onclick=toggleMute;contextBtn.onclick=askContext;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&backdrop.classList.contains('open'))close()});
 // Keep the AI aware of page changes while a session is open.
 const obs=new MutationObserver(()=>{if(connected){clearTimeout(obs._t);obs._t=setTimeout(refreshContext,350)}});obs.observe(document.getElementById('app')||document.body,{subtree:true,attributes:true,attributeFilter:['class']});
