@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>مغامرة المأمون — العربية لغير الناطقين بها</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="theme-color" content="#123d67">
+<link rel="preload" href="assets/mascot.webp?v=365" as="image">
 <link rel="stylesheet" href="assets/game.css?v=365">
 
 <style>
@@ -174,9 +174,9 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
     </div>
     <div class="world">
       <div class="map-box" id="mapBox">
-      <img class="world-art" src="assets/bahrain-home-map.webp?v=365" alt="خريطة مغامرة البحرين">
+      <img class="world-art" src="assets/bahrain-home-map.webp?v=365" alt="خريطة مغامرة البحرين" loading="lazy" decoding="async">
       <svg class="learning-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline id="learningRouteLine" points=""></polyline></svg>
-      <img id="explorer" class="explorer" src="assets/mascot.webp?v=365" alt="المأمون يتحرك بين المحطات">
+      <img id="explorer" class="explorer" src="assets/mascot.webp?v=365" alt="المأمون يتحرك بين المحطات" loading="lazy" decoding="async">
       <div id="sparkles" class="sparkles"></div>
       <!-- مواقع المحطات مطابقة للمعالم المرسومة في الخريطة (نسبة مئوية من الصورة) -->
       <button class="station-node" data-stage="0" style="--x:48.05%;--y:33.73%"><span>1</span><b>قلعة البحرين</b><small>الحروف والحركات</small></button>
