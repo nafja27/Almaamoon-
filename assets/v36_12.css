@@ -175,3 +175,57 @@ body:has(#startScreen.active) .mamoun-buddy-launcher{display:none!important}
   #startScreen .v36-copy h1{font-size:32px!important}
   #startScreen .v36-credit{display:none!important}
 }
+
+
+/* V36.12.1 — keep lower controls reachable on short desktop/iPad viewports */
+#startScreen .v36-intro-card{
+  bottom:18px!important;
+  max-height:calc(100vh - 118px)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  scrollbar-width:none;
+}
+#startScreen .v36-intro-card::-webkit-scrollbar{display:none}
+#startScreen .v36-intro-top{
+  min-height:250px!important;
+  padding-top:18px!important;
+}
+#startScreen .v36-mascot-box{
+  height:230px!important;
+  width:162px!important;
+}
+#startScreen .v36-section-title{margin-top:0!important}
+#startScreen .v36-step{
+  min-height:68px!important;
+  padding:8px 8px 7px!important;
+}
+#startScreen .v36-step-icon{font-size:21px!important}
+#startScreen .v36-actions{
+  padding-top:10px!important;
+  padding-bottom:12px!important;
+  background:linear-gradient(180deg,rgba(255,248,224,0),rgba(255,248,224,.98) 18%);
+  position:sticky!important;
+  bottom:0!important;
+  z-index:6!important;
+}
+#startScreen #heroAiBtn{
+  min-height:48px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+@media(max-height:860px) and (min-width:761px){
+  #startScreen .v36-intro-card{top:92px!important;bottom:10px!important}
+  #startScreen .v36-intro-top{min-height:220px!important;padding-top:12px!important}
+  #startScreen .v36-mascot-box{height:205px!important;width:146px!important}
+  #startScreen .v36-copy h1{font-size:35px!important}
+  #startScreen .v36-ribbon{font-size:13px!important;padding:6px 10px!important}
+  #startScreen .v36-section-title{margin-bottom:5px!important}
+  #startScreen .v36-steps{gap:6px!important}
+  #startScreen .v36-step{min-height:60px!important}
+  #startScreen .v36-step-icon{font-size:19px!important}
+  #startScreen .v36-step b{font-size:12px!important}
+  #startScreen .v36-step small{font-size:9px!important}
+  #startScreen .v36-start-btn{min-height:54px!important;font-size:20px!important}
+  #startScreen .v36-secondary-actions .big-btn{min-height:43px!important}
+}
