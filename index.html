@@ -74,6 +74,7 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
 
 <link rel="stylesheet" href="assets/mamoun-buddy.css?v=3610">
 <link rel="stylesheet" href="assets/v36_10.css?v=3610">
+<link rel="stylesheet" href="assets/v36_11.css?v=3611">
 </head>
 <body>
 <div id="app" class="app">
@@ -140,7 +141,7 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
       </article>
     </main>
 
-    <footer class="v36-credit"><span>إعداد القائم بأعمال مدير مساعد: <b>أ. نافجة الحامد</b></span><i>✦</i><span>مديرة المدرسة: <b>أ. عايدة الدوسري</b></span><em dir="ltr">V36.10</em></footer>
+    <footer class="v36-credit"><span>إعداد القائم بأعمال مدير مساعد: <b>أ. نافجة الحامد</b></span><i>✦</i><span>مديرة المدرسة: <b>أ. عايدة الدوسري</b></span><em dir="ltr">V36.11</em></footer>
   </section>
   <section id="diagnosticScreen" class="screen diagnostic-screen">
     <div class="top-hud simple">
@@ -173,6 +174,24 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
       <div class="hud-actions"><button class="toggle-btn" data-toggle="help" aria-label="English help">EN</button><button class="toggle-btn" data-toggle="tl" aria-label="Sound spelling">Aa</button><button id="worldSoundBtn" class="round-btn" aria-label="الصوت">🔊</button><button class="round-btn" data-nav="start">⌂</button></div>
     </div>
     <div class="world">
+      <section class="world-object-layer" aria-label="واجهة مغامرة المأمون التفاعلية">
+        <div class="world-brand-object">
+          <span class="world-brand-kicker">🇧🇭 رحلة تعلّم عبر البحرين</span>
+          <strong>مغامرة المأمون</strong>
+          <small>من الحرف إلى كنز الطلاقة</small>
+        </div>
+        <aside class="world-mamoun-object">
+          <div class="world-mamoun-speech">
+            <b>أهلًا يا بطل! 👋</b>
+            <span>اختر محطة، وسأرافقك في رحلتك.</span>
+          </div>
+          <img src="assets/mamoun-buddy.png?v=3611" onerror="this.onerror=null;this.src='assets/mascot.webp?v=365'" alt="شخصية المأمون">
+          <div class="world-mamoun-actions">
+            <button id="worldQuickStart" class="world-action primary" type="button"><span>▶</span><b>ابدأ المهمة</b></button>
+            <button id="worldAiObject" class="world-action ai" type="button"><span class="ai-orb">AI</span><b>تحدّث مع المأمون</b><small id="worldAiState">جاري التحقق…</small></button>
+          </div>
+        </aside>
+      </section>
       <div class="map-box" id="mapBox">
       <img class="world-art" src="assets/bahrain-home-map.webp?v=365" alt="خريطة مغامرة البحرين">
       <svg class="learning-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline id="learningRouteLine" points=""></polyline></svg>
@@ -217,5 +236,6 @@ body{background:linear-gradient(180deg,#eef9ff 0%,#f9fdff 100%)}
 <script src="assets/content.js?v=365"></script>
 <script src="assets/game.js?v=3610"></script>
 <script src="assets/mamoun-buddy.js?v=3610"></script>
+<script src="assets/world-game-ui.js?v=3611"></script>
 </body>
 </html>
