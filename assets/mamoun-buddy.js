@@ -99,14 +99,14 @@ async function connect(){
   pc.onconnectionstatechange=()=>{if(['failed','closed','disconnected'].includes(pc.connectionState)&&connected)disconnect(false)};
   const offer=await pc.createOffer();await pc.setLocalDescription(offer);
   const res=await fetch(API,{method:'POST',headers:{'content-type':'application/sdp'},body:offer.sdp});
-  if(!res.ok){let msg='';try{msg=(await res.json()).error||''}catch{}throw new Error(msg||`HTTP_${res.status}`)}
+  if(!res.ok){let msg='';try{const j=await res.json();msg=[j.error,j.code,j.detail].filter(Boolean).join(' — ')}catch{}throw new Error(msg||`HTTP_${res.status}`)}
   const answer={type:'answer',sdp:await res.text()};await pc.setRemoteDescription(answer);
  }catch(err){
   cleanup();start.disabled=false;start.classList.remove('connecting','stop');start.innerHTML='🎙️ <span>ابدأ الحديث</span>';setStatus('تعذر بدء المحادثة');
   const m=String(err?.message||err);
   if(m.includes('missing_api_key'))addMsg('system','لم تتم إضافة مفتاح OpenAI إلى Netlify بعد.');
   else if(m.includes('NotAllowedError')||m.includes('Permission'))addMsg('system','اسمح باستخدام الميكروفون من إعدادات المتصفح، ثم حاول مرة أخرى.');
-  else addMsg('system','تعذر الاتصال بالمأمون الآن. تحقق من الإنترنت وإعداد OpenAI ثم حاول مرة أخرى.');
+  else if(m.includes('rate_limited'))addMsg('system','تم الوصول إلى حد الاستخدام المؤقت في OpenAI. انتظر قليلًا ثم حاول مرة أخرى.');else if(m.includes('auth_error'))addMsg('system','مفتاح OpenAI غير صالح أو لم يعد نشطًا.');else if(m.includes('permission_error'))addMsg('system','حساب OpenAI لا يملك صلاحية استخدام Realtime حاليًا.');else addMsg('system','تعذر الاتصال بالمأمون الآن. '+m.replace(/openai_realtime_error\s*—?\s*/,'').slice(0,220));
  }
 }
 function cleanup(){clearTimeout(sessionTimer);sessionTimer=null;try{dc?.close()}catch{};try{pc?.close()}catch{};try{stream?.getTracks().forEach(t=>t.stop())}catch{};pc=dc=stream=null;connected=false;muted=false;setAvatar('')}
